@@ -74,13 +74,13 @@ class Robot:
         DFx[2,2] = 1
 
         lin_vel, ang_vel = self.convert_wheel_speeds(drive_meas.left_speed, drive_meas.right_speed)
-
+        ang_vel_safe = ang_vel if abs(ang_vel) > 1e-6 else 1e-6
         dt = drive_meas.dt
         th = self.state[2]
         
         # TODO: add your codes here to compute DFx using lin_vel, ang_vel, dt, and th
-        DFx[0,2] = lin_vel/ang_vel*(np.cos(th + dt * ang_vel) - np.cos(th))
-        DFx[1,2] = lin_vel/ang_vel*(np.sin(th + dt * ang_vel) - np.sin(th))
+        DFx[0,2] = lin_vel/ang_vel_safe*(np.cos(th + dt * ang_vel) - np.cos(th))
+        DFx[1,2] = lin_vel/ang_vel_safe*(np.sin(th + dt * ang_vel) - np.sin(th))
 
         # this is the jacobian matrix of the motion model with respect to the robot state vextor (x,y,theta)
         # this represents the how change in the robots displaecement and orientation affects the robot state
@@ -139,11 +139,14 @@ class Robot:
         
         # TODO: add your codes here to compute Jac2 using lin_vel, ang_vel, dt, th, and th2
         # th = theta and th2 = theta + dt * ang_vel (new theta)
-        Jac2[0,0] = (1/ang_vel)             *(-np.sin(th) + np.sin(th2)) 
-        Jac2[0,1] = (-lin_vel/(ang_vel**2)) *(-np.sin(th) + np.sin(th2))
 
-        Jac2[1,0] = (1/ang_vel)             *(np.cos(th) - np.cos(th2)) 
-        Jac2[1,1] = (-lin_vel/(ang_vel**2)) *(np.cos(th) - np.cos(th2))
+        ang_vel_safe = ang_vel if abs(ang_vel) > 1e-6 else 1e-6
+
+        Jac2[0,0] = (1/ang_vel_safe)             *(-np.sin(th) + np.sin(th2)) 
+        Jac2[0,1] = (-lin_vel/(ang_vel_safe**2)) *(-np.sin(th) + np.sin(th2))
+
+        Jac2[1,0] = (1/ang_vel_safe)             *(np.cos(th) - np.cos(th2)) 
+        Jac2[1,1] = (-lin_vel/(ang_vel_safe**2)) *(np.cos(th) - np.cos(th2))
 
         Jac2[2,0] = 0                 
         Jac2[2,1] = dt
