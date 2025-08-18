@@ -94,9 +94,13 @@ class Operate:
         if not self.data is None:
             self.data.write_image(self.img)
 
-    # SLAM with ARUCO markers       
+    # SLAM with ARUCO markers   - i think this will change for milestone 2 
+        
     def update_slam(self, drive_meas):
+        # uses aruco detector to find marker postion in current camera image 
         lms, self.aruco_img = self.aruco_det.detect_marker_positions(self.img)
+
+        # if we use the pause/recover function it gets pose using landmark position
         if self.request_recover_robot:
             is_success = self.ekf.recover_from_pause(lms)
             if is_success:
@@ -106,10 +110,12 @@ class Operate:
                 self.notification = 'Recover failed, need >2 landmarks!'
                 self.ekf_on = False
             self.request_recover_robot = False
+        # if it wasnt requested - the pause and recover function then we just continue using EKF
+
         elif self.ekf_on: # and not self.debug_flag:
-            self.ekf.predict(drive_meas)
-            self.ekf.add_landmarks(lms)
-            self.ekf.update(lms)
+            self.ekf.predict(drive_meas) # use our ekf to predict 
+            self.ekf.add_landmarks(lms) # add land marks 
+            self.ekf.update(lms) # update our pose (correction step)
 
     # save images taken by the camera
     def save_image(self):
@@ -194,7 +200,7 @@ class Operate:
                                           False, text_colour)
         canvas.blit(caption_surface, (position[0], position[1]-25))
 
-    # keyboard teleoperation        
+    # keyboard teleoperation    # this was done by us - lower the speeds so it remains under controll    
     def update_keyboard(self):
         for event in pygame.event.get():
             ########### replace with your M1 codes ###########

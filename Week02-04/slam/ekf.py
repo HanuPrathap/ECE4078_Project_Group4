@@ -109,7 +109,7 @@ class EKF:
 
         P = F @ Prev_P @ F.T + Q
 
-        # i wont update the self.p since this is just the prediction 
+        
         self.P  = P
         
         return P, Q
