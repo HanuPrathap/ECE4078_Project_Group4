@@ -4,10 +4,10 @@
 # Main params to modify
 # ===============================================
 # input_image: example_input.jpg
-input_image: PracticeMap1_input.JPG
+input_image: library_t1.jpg
 
 # output_map_name: test_output.txt
-output_map_name: test1_output.txt
+output_map_name: library_t1__output.txt
 
 # a reference map to specify the objects (how many for each type) on the map
 

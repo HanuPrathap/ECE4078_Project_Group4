@@ -1,6 +1,5 @@
 import numpy as np
 
-# hey i changed this
 
 """
 The Robot class models a differential-drive robot for SLAM. it maintains the robots: 
@@ -62,6 +61,8 @@ class Robot:
             self.state[0] += linear_velocity / angular_velocity * (np.sin(th+dt*angular_velocity) - np.sin(th))
             self.state[1] += -linear_velocity / angular_velocity * (np.cos(th+dt*angular_velocity) - np.cos(th))
             self.state[2] += dt*angular_velocity
+
+
 
 
     """
@@ -213,3 +214,13 @@ class Robot:
         cov = Jac @ cov @ Jac.T
         
         return cov
+
+
+        
+    def print_state(self):
+        """Print the current robot state in a readable format"""
+        x, y, theta = self.state.flatten()
+        print(f"Robot State:")
+        print(f"  Position: ({x:.3f}, {y:.3f})")
+        print(f"  Orientation: {theta:.3f} radians ({np.degrees(theta):.1f} degrees)")
+        print(f"  Raw state vector: {self.state.flatten()}")

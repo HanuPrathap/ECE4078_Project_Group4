@@ -60,7 +60,7 @@ class Operate:
         self.double_reset_comfirm = 0
         self.image_id = 0
         self.notification = 'Press ENTER to start SLAM'
-        # a 5min timer
+        # a 5min timera
         self.count_down = 300
         self.start_time = time.time()
         self.control_clock = time.time()
@@ -68,6 +68,13 @@ class Operate:
         self.img = np.zeros([240,320,3], dtype=np.uint8)
         self.aruco_img = np.zeros([240,320,3], dtype=np.uint8)
         self.bg = pygame.image.load('pics/gui_mask.jpg')
+
+
+        # new code 
+        # Add state printing variables
+        self.last_print_time = time.time()
+        self.print_interval = 1.0  # Print every 1 second
+        self.notification = 'Press ENTER to start SLAM'
 
     # wheel control
     def control(self):    
@@ -116,6 +123,12 @@ class Operate:
             self.ekf.predict(drive_meas) # use our ekf to predict 
             self.ekf.add_landmarks(lms) # add land marks 
             self.ekf.update(lms) # update our pose (correction step)
+        
+            # NEW: Print robot state at regular intervals
+            current_time = time.time()
+            if current_time - self.last_print_time >= self.print_interval:
+                self.ekf.robot.print_state()  # This will print to terminal
+                self.last_print_time = current_time
 
     # save images taken by the camera
     def save_image(self):
@@ -150,6 +163,8 @@ class Operate:
             self.notification = 'Map is saved'
             self.command['output'] = False
 
+ 
+
     # paint the GUI            
     def draw(self, canvas):
         canvas.blit(self.bg, (0, 0))
@@ -181,17 +196,20 @@ class Operate:
             time_remain = f'Count Down: {time_remain:03.0f}s'
         elif int(time_remain)%2 == 0:
             time_remain = "Time Is Up !!!"
-        else:
-            time_remain = ""
+        else:        
+            time_remain = "" 
         count_down_surface = TEXT_FONT.render(time_remain, False, (50, 50, 50))
         canvas.blit(count_down_surface, (2*h_pad+320+5, 530))
         return canvas
+    
+
+
 
     @staticmethod
     def draw_pygame_window(canvas, cv2_img, position):
         cv2_img = np.rot90(cv2_img)
         view = pygame.surfarray.make_surface(cv2_img)
-        view = pygame.transform.flip(view, True, False)
+        view = pygame.transform.flip(view, True, False) 
         canvas.blit(view, position)
     
     @staticmethod
@@ -207,19 +225,19 @@ class Operate:
             # drive forward
             if event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
                 # pass # TODO: replace with your code to make the robot drive forward
-                self.command['motion'] = [10, 0]
+                self.command['motion'] = [1, 0]
             # drive backward
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
                 # pass # TODO: replace with your code to make the robot drive backward
-                self.command['motion'] = [-10, 0]
+                self.command['motion'] = [-1, 0]
             # turn left
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
                 # pass # TODO: replace with your code to make the robot turn left
-                self.command['motion'] = [0, 5]
+                self.command['motion'] = [0, 2]
             # drive right
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
                 # pass # TODO: replace with your code to make the robot turn right
-                self.command['motion'] = [0, -5]
+                self.command['motion'] = [0, -2]
             ####################################################
             # stop
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
@@ -266,6 +284,9 @@ class Operate:
         if self.quit:
             pygame.quit()
             sys.exit()
+
+
+
 
         
 if __name__ == "__main__":
@@ -315,10 +336,13 @@ if __name__ == "__main__":
     while start:
         operate.update_keyboard()
         operate.take_pic()
+
         drive_meas = operate.control()
         operate.update_slam(drive_meas)
+        
         operate.record_data()
         operate.save_image()
+        
         # visualise
         operate.draw(canvas)
         pygame.display.update()

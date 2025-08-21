@@ -16,7 +16,7 @@ def parse_groundtruth(fname : str) -> dict:
 
 def parse_user_map(fname : str) -> dict:
     with open(fname, 'r') as f:
-        usr_dict = ast.literal_eval(f.read())
+        usr_dict = ast.literal_eval(f.read()) 
         aruco_dict = {}
         for (i, tag) in enumerate(usr_dict["taglist"]):
             aruco_dict[tag] = np.reshape([usr_dict["map"][0][i],usr_dict["map"][1][i]], (2,1))

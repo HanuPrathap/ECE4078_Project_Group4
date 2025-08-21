@@ -27,8 +27,8 @@ class EKF:
     def __init__(self, robot):
         # State components
         # just initialise them for now 
-        self.robot = robot
-        self.markers = np.zeros((2,0))
+        self.robot = robot # robot class
+        self.markers = np.zeros((2,0)) # initiliase the land mark array
         self.taglist = []
 
         # Covariance matrix set to 0 for P which means it sure of the possition at first 
@@ -103,9 +103,12 @@ class EKF:
         F = self.state_transition(raw_drive_meas) # F is our A matrix 
         x = self.get_state_vector() # x is x-bar our belief 
 
+        self.robot.drive(raw_drive_meas)
+
         # TODO: add your codes here to complete the prediction step
         Prev_P = self.P
-        Q = self.predict_covariance(raw_drive_meas)
+
+        Q = self.predict_covariance(raw_drive_meas) # possibly tune this or chage how we define this 
 
         P = F @ Prev_P @ F.T + Q
 
@@ -135,6 +138,7 @@ class EKF:
 
         # Compute own measurements
         z_hat = self.robot.measure(self.markers, idx_list)
+
         z_hat = z_hat.reshape((-1,1),order="F")
 
         H = self.robot.derivative_measure(self.markers, idx_list) # H is already the derivite of the measure model 
@@ -152,13 +156,14 @@ class EKF:
         Kalmain_gain = P @ H.T @ np.linalg.inv(innovation_matrix)
 
         innovation = (z - z_hat)
-
-        x_new = x + Kalmain_gain + Kalmain_gain @ (innovation)
+    
+        x_new = x  + Kalmain_gain @ (innovation)
 
         I = np.eye(P.shape[0])
         P_new = (I - Kalmain_gain @ H) @ P
 
         self.P = P_new
+        self.set_state_vector(x_new)
 
         return P_new, x_new
 
@@ -173,7 +178,12 @@ class EKF:
         return F
     
 
-    def predict_covariance(self, raw_drive_meas): # gets covariacne matrix fur the current state 
+
+
+    def predict_covariance(self, raw_drive_meas): # gets covariacne matrix for the current state fo system noise 
+
+        # maybe check if any landmarks have been seen yet and then check 
+
         n = self.number_landmarks()*2 + 3
         Q = np.zeros((n,n))
         Q[0:3,0:3] = self.robot.covariance_drive(raw_drive_meas)+ 0.01*np.eye(3)
