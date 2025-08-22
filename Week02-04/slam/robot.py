@@ -63,8 +63,6 @@ class Robot:
             self.state[2] += dt*angular_velocity
 
 
-
-
     """
     measure method - measures landmakrs relative to robots frame from world frame   
     1. markers is a 2*N array fo landmark positions in world frame
@@ -77,17 +75,17 @@ class Robot:
         # Construct a 2x2 rotation matrix from the robot angle
         th = self.state[2]
         Rot_theta = np.block([[np.cos(th), -np.sin(th)],[np.sin(th), np.cos(th)]])
-        robot_xy = self.state[0:2,:]
+        robot_xy = self.state[0:2,:] # this is in the world frame 
 
         measurements = []
         for idx in idx_list:
-            marker = markers[:,idx:idx+1]
-            marker_bff = Rot_theta.T @ (marker - robot_xy)
+            marker = markers[:,idx:idx+1] # maker is the position of the marker in the world frame 
+            marker_bff = Rot_theta.T @ (marker - robot_xy) # this calculates the vector from robot to the aruco marker
             measurements.append(marker_bff)
 
         # Stack the measurements in a 2xm structure.
         markers_bff = np.concatenate(measurements, axis=1)
-        return markers_bff
+        return markers_bff # markers is the psotionn vector in terms of the the robots body frame not world frame 
     
 
     """
@@ -121,15 +119,25 @@ class Robot:
         lin_vel, ang_vel = self.convert_wheel_speeds(drive_meas.left_speed, drive_meas.right_speed)
 
         # convert angular velcoty to a small value if 0 
-        ang_vel_safe = ang_vel if abs(ang_vel) > 1e-6 else 1e-6
+        # ang_vel_safe = ang_vel if abs(ang_vel) > 1e-6 else 1e-6
+
+        # have two cases 
+
+        
 
         dt = drive_meas.dt
         th = self.state[2]
         
         # TODO: add your codes here to compute DFx using lin_vel, ang_vel, dt, and th
         # doubled checked this 
-        DFx[0,2] = lin_vel/ang_vel_safe*(np.cos(th + dt * ang_vel) - np.cos(th))
-        DFx[1,2] = lin_vel/ang_vel_safe*(np.sin(th + dt * ang_vel) - np.sin(th))
+
+        if ang_vel == 0:
+            DFx[0,2] = lin_vel*(- np.sin(th))*dt
+            DFx[1,2] = lin_vel*( np.cos(th))*dt
+
+        else:
+            DFx[0,2] = lin_vel/ang_vel*(np.cos(th + dt * ang_vel) - np.cos(th))
+            DFx[1,2] = lin_vel/ang_vel*(np.sin(th + dt * ang_vel) - np.sin(th))
 
         # this is the jacobian matrix of the motion model with respect to the robot state vextor (x,y,theta)
         # this represents the how change in the robots displaecement and orientation affects the robot state
@@ -198,10 +206,10 @@ class Robot:
         ang_vel_safe = ang_vel if abs(ang_vel) > 1e-6 else 1e-6
 
         Jac2[0,0] = (1/ang_vel_safe)             *(-np.sin(th) + np.sin(th2)) 
-        Jac2[0,1] = (-lin_vel/(ang_vel_safe**2)) *(-np.sin(th) + np.sin(th2))
+        Jac2[0,1] = (-lin_vel/(ang_vel_safe**2)) *(-np.sin(th) + np.sin(th2)) + (lin_vel/ang_vel_safe)* np.cos(th2)*dt
 
         Jac2[1,0] = (1/ang_vel_safe)             *(np.cos(th) - np.cos(th2)) 
-        Jac2[1,1] = (-lin_vel/(ang_vel_safe**2)) *(np.cos(th) - np.cos(th2))
+        Jac2[1,1] = (-lin_vel/(ang_vel_safe**2)) *(np.cos(th) - np.cos(th2)) + (lin_vel/ang_vel_safe)* np.sin(th2)*dt
 
         Jac2[2,0] = 0                 
         Jac2[2,1] = dt
@@ -224,3 +232,5 @@ class Robot:
         print(f"  Position: ({x:.3f}, {y:.3f})")
         print(f"  Orientation: {theta:.3f} radians ({np.degrees(theta):.1f} degrees)")
         print(f"  Raw state vector: {self.state.flatten()}")
+
+

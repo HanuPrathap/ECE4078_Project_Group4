@@ -1,0 +1,2 @@
+python SLAM_eval.py TrueMap.txt lab_output/slam.txt
+

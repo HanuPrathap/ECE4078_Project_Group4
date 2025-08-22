@@ -102,13 +102,18 @@ class EKF:
 
         F = self.state_transition(raw_drive_meas) # F is our A matrix 
         x = self.get_state_vector() # x is x-bar our belief 
-
+        Q = self.predict_covariance(raw_drive_meas) # possibly tune this or chage how we define this
+         
         self.robot.drive(raw_drive_meas)
+        x[0:3, :] = self.robot.state
+        self.set_state_vector(x)
+        
+       
 
         # TODO: add your codes here to complete the prediction step
         Prev_P = self.P
 
-        Q = self.predict_covariance(raw_drive_meas) # possibly tune this or chage how we define this 
+        
 
         P = F @ Prev_P @ F.T + Q
 
@@ -252,6 +257,20 @@ class EKF:
         t = mean_to - R.dot(mean_from)
     
         return R, t
+    
+
+
+    # new function to print out the first landmark position 
+    # chat make code for this i want th epoisition (x,y) for the landmark position which will be ethe 4th element of the state vector 
+    # def print_first_landmark(self):
+    #     if self.number_landmarks() > 0:
+    #         # Landmark positions are stored in self.markers
+    #         x, y = self.markers[:, 0]  # first landmark (column 0)
+    #         print(f"First landmark position: x = {x:.3f}, y = {y:.3f}")
+    #         return (x, y)
+    #     else:
+    #         print("No landmarks available.")
+    #         return None
 
     # Plotting functions
     # ------------------
@@ -284,7 +303,7 @@ class EKF:
         axes_len,angle = self.make_ellipse(p_robot)
         canvas = cv2.ellipse(canvas, start_point_uv, 
                     (int(axes_len[0]*m2pixel), int(axes_len[1]*m2pixel)),
-                    angle, 0, 360, (0, 30, 56), 1)
+                    angle, 0, 360, (0, 35, 56), 1)
         # draw landmards
         if self.number_landmarks() > 0:
             for i in range(len(self.markers[0,:])):

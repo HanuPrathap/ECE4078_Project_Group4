@@ -37,10 +37,11 @@ class Operate:
         else:
             self.pibot = PenguinPi(args.ip, args.port)
 
+
+
         # initialise SLAM parameters
         self.ekf = self.init_ekf(args.calib_dir, args.ip)
-        self.aruco_det = aruco.aruco_detector(
-            self.ekf.robot, marker_length = 0.07) # size of the ARUCO markers
+        self.aruco_det = aruco.aruco_detector(self.ekf.robot, marker_length = 0.07) # size of the ARUCO markers
 
         if args.save_data:
             self.data = dh.DatasetWriter('record')
@@ -70,17 +71,25 @@ class Operate:
         self.bg = pygame.image.load('pics/gui_mask.jpg')
 
 
-        # new code 
-        # Add state printing variables
-        self.last_print_time = time.time()
-        self.print_interval = 1.0  # Print every 1 second
-        self.notification = 'Press ENTER to start SLAM'
+        # # new code 
+        # # Add state printing variables
+        # self.last_print_time = time.time()
+        # self.print_interval = 1.0  # Print every 1 second
+        # self.notification = 'Press ENTER to start SLAM'
 
-    # wheel control
+
+ 
+   
+   
+    """
+    this function produces drive_meas from keyboard controls
+    """
+
+    # wheel control from operate.py 
     def control(self):    
         if args.play_data:
             lv, rv = self.pibot.set_velocity()            
-        else:
+        else: # this is the part we use to run based of keyboad instructions 
             lv, rv = self.pibot.set_velocity(
                 self.command['motion'])
         if not self.data is None:
@@ -91,21 +100,26 @@ class Operate:
             drive_meas = measure.Drive(lv, rv, dt)
         # running on physical robot (right wheel reversed)
         else:
-            drive_meas = measure.Drive(lv, -rv, dt)
+            drive_meas = measure.Drive(lv, -rv, dt) # drive-meas gets produced in the util file in a class but gets called here 
         self.control_clock = time.time()
         return drive_meas
         
-    # camera control
+    # camera control - takes pictures to use in self.data kinda of like a diary of all the pictures it takes that gets used in slam 
     def take_pic(self):
         self.img = self.pibot.get_image()
         if not self.data is None:
             self.data.write_image(self.img)
 
-    # SLAM with ARUCO markers   - i think this will change for milestone 2 
+ 
         
     def update_slam(self, drive_meas):
         # uses aruco detector to find marker postion in current camera image 
         lms, self.aruco_img = self.aruco_det.detect_marker_positions(self.img)
+   
+
+
+        
+
 
         # if we use the pause/recover function it gets pose using landmark position
         if self.request_recover_robot:
@@ -117,18 +131,27 @@ class Operate:
                 self.notification = 'Recover failed, need >2 landmarks!'
                 self.ekf_on = False
             self.request_recover_robot = False
+
         # if it wasnt requested - the pause and recover function then we just continue using EKF
 
-        elif self.ekf_on: # and not self.debug_flag:
+        elif self.ekf_on: # and not self.debug_flag:  - if slam mode is on and was not asked to locate myself then continue using ekf
+            
             self.ekf.predict(drive_meas) # use our ekf to predict 
             self.ekf.add_landmarks(lms) # add land marks 
             self.ekf.update(lms) # update our pose (correction step)
-        
+
+            # here we can also print the aruco marker position 
+            # print position of marker 
+            
+            # self.ekf.print_first_landmark()
+
+
+            
             # NEW: Print robot state at regular intervals
-            current_time = time.time()
-            if current_time - self.last_print_time >= self.print_interval:
-                self.ekf.robot.print_state()  # This will print to terminal
-                self.last_print_time = current_time
+            # current_time = time.time()
+            # if current_time - self.last_print_time >= self.print_interval:
+            #     self.ekf.robot.print_state()  # This will print to terminal - comment it out jsut for now 
+            #     self.last_print_time = current_time
 
     # save images taken by the camera
     def save_image(self):
@@ -165,7 +188,7 @@ class Operate:
 
  
 
-    # paint the GUI            
+    # paint the GUI              
     def draw(self, canvas):
         canvas.blit(self.bg, (0, 0))
         text_colour = (220, 220, 220)
@@ -339,6 +362,10 @@ if __name__ == "__main__":
 
         drive_meas = operate.control()
         operate.update_slam(drive_meas)
+
+        # # could print drive meas this will also print out the left speed velocity and right wheel velocities 
+        # print(f"left wheel speed: {drive_meas.left_speed}       right wheel speed: {drive_meas.right_speed}")
+        # print(f"left wheel cov:   {drive_meas.left_cov}         right wheel cov:   {drive_meas.right_cov    } ")
         
         operate.record_data()
         operate.save_image()
