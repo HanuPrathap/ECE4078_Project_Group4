@@ -78,6 +78,8 @@ class EKF:
                 return True
             else:
                 return False
+            
+    
         
     ##########################################
     # EKF functions
@@ -87,10 +89,18 @@ class EKF:
     # the prediction step of EKF
     def predict(self, raw_drive_meas):
 
-        F = self.state_transition(raw_drive_meas)
+        # jas - comment: this is our A matrix linearising around raw drive mease which acts like x_bar
+        F = self.state_transition(raw_drive_meas) 
 
-        self.robot.drive(raw_drive_meas) # Updates robot's position based on driving data
+        self.robot.drive(raw_drive_meas) # Updates robot's position based on driving data - this was already added by uni latest changes 
         # TODO: add your codes here to complete the prediction step
+
+        # calculate the noise of the model based on updated state using raw_drive_meas
+        Q = self.predict_covariance(raw_drive_meas)
+
+        # we just need to calculate variance of the model no need to calculate x_bar since we use .state_transition(raw_drive_meas)
+        self.P = F @ self.P @ F.T + Q
+
 
     # the update step of EKF
     def update(self, measurements):
@@ -116,6 +126,17 @@ class EKF:
 
         # TODO: add your codes here to compute the updated x
 
+        # calculate kalmain gain 
+        K = self.P @ H.T @ np.linalg.inv(H @ self.P @ H.T + R)
+
+        # Update state
+        x = self.get_state_vector()
+        x = x + K @ (z - z_hat)
+
+        # Update covariance
+        self.P = (np.eye(self.P.shape[0]) - K @ H) @ self.P
+
+        # Write updated state back
 
         # ENDTODO
         self.set_state_vector(x) # Updates marker and robot poses based on the values in the state vector 'x'

@@ -109,6 +109,13 @@ class Operate:
         elif self.ekf_on: # and not self.debug_flag:
             self.ekf.predict(drive_meas)
             self.ekf.add_landmarks(lms)
+
+                # now print first marker
+            if operate.ekf.number_landmarks() > 0:
+                x0, y0 = operate.ekf.markers[:, 0]
+                print(f"First marker: x={x0:.2f}, y={y0:.2f}")
+
+                
             self.ekf.update(lms)
 
     # save images taken by the camera
@@ -200,16 +207,20 @@ class Operate:
             ########### replace with your M1 codes ###########
             # drive forward
             if event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
-                pass # TODO: replace with your M1 code to make the robot drive forward
+                # TODO: replace with your M1 code to make the robot drive forward
+                self.command['motion'] = [1,0]
             # drive backward
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
-                pass # TODO: replace with your M1 code to make the robot drive backward
+                # TODO: replace with your M1 code to make the robot drive backward
+                self.command['motion'] = [-1,0]
             # turn left
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
-                pass # TODO: replace with your M1 code to make the robot turn left
+                # TODO: replace with your M1 code to make the robot turn left
+                self.command['motion'] = [0,2]
             # drive right
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
                 pass # TODO: replace with your M1 code to make the robot turn right
+                self.command['motion'] = [0,-2]
             ####################################################
             # stop
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
@@ -307,11 +318,17 @@ if __name__ == "__main__":
         operate.take_pic()
         drive_meas = operate.control()
         operate.update_slam(drive_meas)
+
+        # printing the state vector of robot
+
+        x, y, theta = operate.ekf.robot.state[:,0]
+        print(f"Robot pose: x={x:.2f}, y={y:.2f}, theta={theta * 180/np.pi:.2f} degrees")
+
         operate.record_data()
         operate.save_image()
         # visualise
         operate.draw(canvas)
-        pygame.display.update()
+        pygame.display.update() 
 
 
 
