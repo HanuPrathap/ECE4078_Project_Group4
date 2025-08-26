@@ -169,7 +169,7 @@ class EKF:
         # if lin_v <= lin_thresh and ang_v <= ang_thresh:
         #     # sgtationary ish 
         #     motion_scaling = 0.2 # play around with this
-        motion_scaling=lin_v*0.09
+        motion_scaling=lin_v*0.08
 
 
         Q = np.zeros((n,n))
