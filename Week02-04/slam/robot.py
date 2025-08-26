@@ -154,7 +154,7 @@ class Robot:
             Jac2[0,1] = ((v/(w**2)) * (np.sin(th) - np.sin(th2))) + ((v/w) * np.cos(th2) *dt) 
 
             Jac2[1,0] = (1/w) * (np.cos(th) - np.cos(th2))
-            Jac2[0,1] = ((-v/(w**2)) * (np.cos(th) + np.cos(th2))) + ((v/w) * np.sin(th2) *dt) 
+            Jac2[1,1] = ((-v/(w**2)) * (np.cos(th) + np.cos(th2))) + ((v/w) * np.sin(th2) *dt) 
 
             Jac2[2,1] = dt
             
