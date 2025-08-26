@@ -16,34 +16,37 @@ def calibrateWheelRadius():
     # Feel free to change the range / step
     ##########################################
     wheel_velocities_range = range(20, 80, 15)
-    delta_times = []
+    delta_times = [18.4, 10.48, 7.3, 5.62]
 
-    for wheel_vel in wheel_velocities_range:
-        print("Driving at {} ticks/s.".format(wheel_vel))
-        # Repeat the test until the correct time is found.
-        while True:
-            delta_time = input("Input the time to drive in seconds: ")
-            try:
-                delta_time = float(delta_time)
-            except ValueError:
-                print("Time must be a number.")
-                continue
+    # for wheel_vel in wheel_velocities_range:
+    #     print("Driving at {} ticks/s.".format(wheel_vel))
+    #     # Repeat the test until the correct time is found.
+    #     while True:
+    #         delta_time = input("Input the time to drive in seconds: ")
+    #         try:
+    #             delta_time = float(delta_time)
+    #         except ValueError:
+    #             print("Time must be a number.")
+    #             continue
 
-            # Drive the robot at the given speed for the given time
-            ppi.set_velocity([1, 0], tick=wheel_vel, time=delta_time)
+    #         # Drive the robot at the given speed for the given time
+    #         ppi.set_velocity([1, 0], tick=wheel_vel, time=delta_time)
 
-            uInput = input("Did the robot travel 1m?[y/N]")
-            if uInput == 'y':
-                delta_times.append(delta_time)
-                print("Recording that the robot drove 1m in {:.2f} seconds at wheel speed {}.\n".format(delta_time,
-                                                                                                        wheel_vel))
-                break
+    #         uInput = input("Did the robot travel 1m?[y/N]")
+    #         if uInput == 'y':
+    #             delta_times.append(delta_time)
+    #             print("Recording that the robot drove 1m in {:.2f} seconds at wheel speed {}.\n".format(delta_time,
+    #                                                                                                     wheel_vel))
+    #             break
 
     # Once finished driving, compute the scale parameter by averaging
     num = len(wheel_velocities_range)
     scale = 0
     for delta_time, wheel_vel in zip(delta_times, wheel_velocities_range):
-        pass # TODO: replace with your code to compute the scale parameter using wheel_vel and delta_time
+
+        scale += 1.0 / (wheel_vel * delta_time)
+    scale /= num
+
     print("The scale parameter is estimated as {:.6f} m/ticks.".format(scale))
 
     return scale
@@ -59,34 +62,39 @@ def calibrateBaseline(scale):
     # Feel free to change the range / step
     ##########################################
     wheel_velocities_range = range(30, 60, 10)
-    delta_times = []
+    delta_times = [5.65, 4.2, 3.38]  
 
-    for wheel_vel in wheel_velocities_range:
-        print("Driving at {} ticks/s.".format(wheel_vel))
-        # Repeat the test until the correct time is found.
-        while True:
-            delta_time = input("Input the time to drive in seconds: ")
-            try:
-                delta_time = float(delta_time)
-            except ValueError:
-                print("Time must be a number.")
-                continue
+    # for wheel_vel in wheel_velocities_range:
+    #     print("Driving at {} ticks/s.".format(wheel_vel))
+    #     # Repeat the test until the correct time is found.
+    #     while True:
+    #         delta_time = input("Input the time to drive in seconds: ")
+    #         try:
+    #             delta_time = float(delta_time)
+    #         except ValueError:
+    #             print("Time must be a number.")
+    #             continue
 
-            # Spin the robot at the given speed for the given time
-            ppi.set_velocity([0, 1], tick=20,turning_tick=wheel_vel, time = delta_time)
+    #         # Spin the robot at the given speed for the given time
+    #         ppi.set_velocity([0, 1], tick=20,turning_tick=wheel_vel, time = delta_time)
 
-            uInput = input("Did the robot spin 360deg?[y/N]")
-            if uInput == 'y':
-                delta_times.append(delta_time)
-                print("Recording that the robot spun 360deg in {:.2f} seconds at wheel speed {}.\n".format(delta_time,
-                                                                                                           wheel_vel))
-                break
+    #         uInput = input("Did the robot spin 360deg?[y/N]")
+    #         if uInput == 'y':
+    #             delta_times.append(delta_time)
+    #             print("Recording that the robot spun 360deg in {:.2f} seconds at wheel speed {}.\n".format(delta_time,
+    #                                                                                                        wheel_vel))
+    #             break
 
     # Once finished driving, compute the basline parameter by averaging
     num = len(wheel_velocities_range)
     baseline = 0
     for delta_time, wheel_vel in zip(delta_times, wheel_velocities_range):
-        pass # TODO: replace with your code to compute the baseline parameter using scale, wheel_vel, and delta_time
+           
+           l = (scale* wheel_vel *delta_time) / np.pi
+
+           baseline += l
+    baseline /= num
+        
     print("The baseline parameter is estimated as {:.6f} m.".format(baseline))
 
     return baseline

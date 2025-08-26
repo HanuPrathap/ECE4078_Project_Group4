@@ -66,11 +66,11 @@ class Operate:
         self.control_clock = time.time()
         # initialise images
         self.img = np.zeros([240,320,3], dtype=np.uint8)
-        self.aruco_img = np.zeros([240,320,3], dtype=np.uint8)
+        self.aruco_img = np.zeros([240,320,3], dtype=np.uint8)  
         self.bg = pygame.image.load('pics/gui_mask.jpg')
 
     # wheel control
-    def control(self):    
+    def control(self):     
         if args.play_data:
             lv, rv = self.pibot.set_velocity()            
         else:
@@ -84,6 +84,8 @@ class Operate:
             drive_meas = measure.Drive(lv, rv, dt)
         # running on physical robot (right wheel reversed)
         else:
+
+
             drive_meas = measure.Drive(lv, -rv, dt)
         self.control_clock = time.time()
         return drive_meas
@@ -110,12 +112,10 @@ class Operate:
             self.ekf.predict(drive_meas)
             self.ekf.add_landmarks(lms)
 
-                # now print first marker
-            if operate.ekf.number_landmarks() > 0:
-                x0, y0 = operate.ekf.markers[:, 0]
-                print(f"First marker: x={x0:.2f}, y={y0:.2f}")
-
-                
+            # # now print first marker this is a function that worked last night to get the first marker position 
+            # if operate.ekf.number_landmarks() > 0:
+            #     x0, y0 = operate.ekf.markers[:, 0]
+            #     print(f"First marker: x={x0:.2f}, y={y0:.2f}")
             self.ekf.update(lms)
 
     # save images taken by the camera
@@ -156,10 +156,10 @@ class Operate:
         canvas.blit(self.bg, (0, 0))
         text_colour = (220, 220, 220)
         v_pad = 40
-        h_pad = 20
+        h_pad = 20         
 
         # paint SLAM outputs
-        ekf_view = self.ekf.draw_slam_state(res=(320, 480+v_pad),
+        ekf_view = self.ekf.draw_slam_state(res=(320, 480+v_pad), 
             not_pause = self.ekf_on)
         canvas.blit(ekf_view, (2*h_pad+320, v_pad))
         robot_view = cv2.resize(self.aruco_img, (320, 240))
@@ -187,6 +187,22 @@ class Operate:
         count_down_surface = TEXT_FONT.render(time_remain, False, (50, 50, 50))
         canvas.blit(count_down_surface, (2*h_pad+320+5, 530))
         return canvas
+    
+
+    # jas function to print all the percieved landmarks at the end of slam 
+
+    def print_landmarks(self):
+        # After exiting SLAM mode
+        num_lms = self.ekf.number_landmarks()   # do i call operate.ekf or self.ekf on this 
+        if num_lms > 0:
+            print("\n--- Landmark positions recorded during SLAM ---")
+            for i in range(num_lms):
+                x, y = self.ekf.markers[:, i]
+                print(f"Landmark {i+1}: x={x:.2f}, y={y:.2f}")
+            print("----------------------------------------------\n")
+        else:
+            print("No landmarks were observed during SLAM.")
+
 
     @staticmethod
     def draw_pygame_window(canvas, cv2_img, position):
@@ -216,11 +232,11 @@ class Operate:
             # turn left
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
                 # TODO: replace with your M1 code to make the robot turn left
-                self.command['motion'] = [0,2]
+                self.command['motion'] = [0,1]
             # drive right
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
                 pass # TODO: replace with your M1 code to make the robot turn right
-                self.command['motion'] = [0,-2]
+                self.command['motion'] = [0,-1]
             ####################################################
             # stop
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
@@ -320,7 +336,6 @@ if __name__ == "__main__":
         operate.update_slam(drive_meas)
 
         # printing the state vector of robot
-
         x, y, theta = operate.ekf.robot.state[:,0]
         print(f"Robot pose: x={x:.2f}, y={y:.2f}, theta={theta * 180/np.pi:.2f} degrees")
 
@@ -330,6 +345,8 @@ if __name__ == "__main__":
         operate.draw(canvas)
         pygame.display.update() 
 
+        # after slam finishes then i want to print all the landmarks position usingn my function 
+        # operate.print_landmarks()
 
 
 

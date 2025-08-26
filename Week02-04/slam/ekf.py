@@ -96,6 +96,8 @@ class EKF:
         # TODO: add your codes here to complete the prediction step
 
         # calculate the noise of the model based on updated state using raw_drive_meas
+
+
         Q = self.predict_covariance(raw_drive_meas)
 
         # we just need to calculate variance of the model no need to calculate x_bar since we use .state_transition(raw_drive_meas)
@@ -149,8 +151,44 @@ class EKF:
     
     def predict_covariance(self, raw_drive_meas):
         n = self.number_landmarks()*2 + 3
+
+        # # get the linear and ang vel
+        lin_v, ang_v = self.robot.convert_wheel_speeds(raw_drive_meas.left_speed, raw_drive_meas.right_speed)
+
+        # # get absolute values 
+        # lin_v = abs(lin_v)
+        # ang_v = abs(ang_v)
+
+        # # calculate threshold 
+        # lin_thresh = 0.01
+        # ang_thresh = 0.01
+
+        # Get linear and angular velocities from wheel speeds
+        lin_v, ang_v = self.robot.convert_wheel_speeds(
+            raw_drive_meas.left_speed, raw_drive_meas.right_speed
+        )
+
+        # --- Independent scalings for x, y, theta ---
+        x_scale     = abs(lin_v) * 0.08   # scale factor for x
+        y_scale     = abs(lin_v) * 0.08   # scale factor for y
+        theta_scale = abs(ang_v) * 0.08   # scale factor for θ
+
+        # Build scaling covariance for the robot pose (3x3 block)
+        new_cov = np.eye(3)
+        new_cov[0,0] = x_scale
+        new_cov[1,1] = y_scale
+        new_cov[2,2] = theta_scale
+
+
+
+
         Q = np.zeros((n,n))
-        Q[0:3,0:3] = self.robot.covariance_drive(raw_drive_meas)+ 0.01*np.eye(3)
+        Q[0:3,0:3] = self.robot.covariance_drive(raw_drive_meas) + new_cov
+
+
+
+        
+
         return Q
 
     def add_landmarks(self, measurements):

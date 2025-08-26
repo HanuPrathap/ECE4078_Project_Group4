@@ -29,7 +29,7 @@ class Robot:
             th = self.state[2]
             self.state[0] += linear_velocity / angular_velocity * (np.sin(th+dt*angular_velocity) - np.sin(th))
             self.state[1] += -linear_velocity / angular_velocity * (np.cos(th+dt*angular_velocity) - np.cos(th))
-            self.state[2] += dt*angular_velocity
+            self.state[2] += dt*angular_velocity  #  scale to correct 
 
     def measure(self, markers, idx_list):
         # Markers are 2d landmarks in a 2xn structure where there are n landmarks.
@@ -154,7 +154,7 @@ class Robot:
             Jac2[0,1] = ((v/(w**2)) * (np.sin(th) - np.sin(th2))) + ((v/w) * np.cos(th2) *dt) 
 
             Jac2[1,0] = (1/w) * (np.cos(th) - np.cos(th2))
-            Jac2[0,1] = ((-v/(w**2)) * (np.cos(th) + np.cos(th2))) + ((v/w) * np.sin(th2) *dt) 
+            Jac2[1,1] = ((-v/(w**2)) * (np.cos(th) + np.cos(th2))) + ((v/w) * np.sin(th2) *dt) 
 
             Jac2[2,1] = dt
             
