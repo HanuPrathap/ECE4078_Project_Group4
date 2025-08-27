@@ -69,6 +69,17 @@ class Operate:
         self.aruco_img = np.zeros([240,320,3], dtype=np.uint8)  
         self.bg = pygame.image.load('pics/gui_mask.jpg')
 
+
+        # # video writer
+        # fourcc = cv2.VideoWriter_fourcc(*'XVID')  # codec: .avi file
+        # self.video_writer = cv2.VideoWriter(
+        #     os.path.join(self.folder, 'pibot_video.avi'),
+        #     fourcc,
+        #     20.0,  # fps (match your camera rate, often ~20–30 fps)
+        #     (320, 240)  # resolution, must match self.img size
+        # )
+        # self.record_video = False
+
     # wheel control
     def control(self):     
         if args.play_data:
@@ -95,6 +106,12 @@ class Operate:
         self.img = self.pibot.get_image()
         if not self.data is None:
             self.data.write_image(self.img)
+        
+        # if self.record_video:
+        #     # convert from RGB (pygame uses) to BGR (OpenCV expects)
+        #     bgr_img = cv2.cvtColor(self.img, cv2.COLOR_RGB2BGR)
+        #     self.video_writer.write(bgr_img)
+
 
     # SLAM with ARUCO markers       
     def update_slam(self, drive_meas):
@@ -111,11 +128,6 @@ class Operate:
         elif self.ekf_on: # and not self.debug_flag:
             self.ekf.predict(drive_meas)
             self.ekf.add_landmarks(lms)
-
-            # # now print first marker this is a function that worked last night to get the first marker position 
-            # if operate.ekf.number_landmarks() > 0:
-            #     x0, y0 = operate.ekf.markers[:, 0]
-            #     print(f"First marker: x={x0:.2f}, y={y0:.2f}")
             self.ekf.update(lms)
 
     # save images taken by the camera
@@ -198,7 +210,7 @@ class Operate:
             print("\n--- Landmark positions recorded during SLAM ---")
             for i in range(num_lms):
                 x, y = self.ekf.markers[:, i]
-                print(f"Landmark {i+1}: x={x:.2f}, y={y:.2f}")
+                print(f"Landmark {i+1}: x={x:.4f}, y={y:.4f}")
             print("----------------------------------------------\n")
         else:
             print("No landmarks were observed during SLAM.")
@@ -256,7 +268,17 @@ class Operate:
                     self.notification = 'SLAM Map is cleared'
                     self.double_reset_comfirm = 0
                     self.ekf.reset()
-            # run SLAM
+
+            # # revorcing v and stop 
+            # elif event.type == pygame.KEYDOWN and event.key == pygame.K_v:
+            #     self.record_video = not self.record_video
+            #     if self.record_video:
+            #         self.notification = 'Video recording started'
+            #     else:
+            #         self.notification = 'Video recording stopped'     
+
+
+                # run SLAM
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                 n_observed_markers = len(self.ekf.taglist)
                 if n_observed_markers == 0:
@@ -275,12 +297,18 @@ class Operate:
                         self.notification = 'SLAM is running'
                     else:
                         self.notification = 'SLAM is paused'
+
+            
             # quit
             elif event.type == pygame.QUIT:
                 self.quit = True
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 self.quit = True
         if self.quit:
+
+            # if self.video_writer is not None:
+            #     self.video_writer.release()
+
             pygame.quit()
             sys.exit()
 
@@ -337,10 +365,10 @@ if __name__ == "__main__":
 
         # printing the state vector of robot
         x, y, theta = operate.ekf.robot.state[:,0]
-        print(f"Robot pose: x={x:.2f}, y={y:.2f}, theta={theta * 180/np.pi:.2f} degrees")
+        print(f"Robot pose: x={x:.4f}, y={y:.4f}, theta={theta * 180/np.pi:.4f} degrees")
 
         operate.record_data()
-        operate.save_image()
+        operate.save_image()               
         # visualise
         operate.draw(canvas)
         pygame.display.update() 

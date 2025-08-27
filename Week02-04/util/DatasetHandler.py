@@ -65,23 +65,47 @@ class DatasetPlayer:
         self.f_image = 1
         self.f_vel = 1
         
-    
     def get_image(self):
         try:
             row = next(self.img_fc)
+            # make sure row has at least 3 entries
+            if len(row) < 3:
+                print(f"Warning: row has {len(row)} columns, expected >=3")
+                return np.zeros([240,320,3], dtype=np.uint8)
         except StopIteration:
             if self.f_image:
                 print("End of image data.")
                 self.f_image = 0          
-            img = np.zeros([240,320,3], dtype=np.uint8)           
-            return img
+            return np.zeros([240,320,3], dtype=np.uint8)
 
         t = float(row[0])
-        img = cv2.imread(row[2])
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        img_path = row[2]
+        img = cv2.imread(img_path)
+        if img is None:
+            print(f"Warning: image file not found: {img_path}")
+            return np.zeros([240,320,3], dtype=np.uint8)
+
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # RGB format for your code
+        # optional: wait until the recorded timestamp
         while time.time() - self.t0 < t:
             continue
         return img
+    # def get_image(self):
+    #     try:
+    #         row = next(self.img_fc)
+    #     except StopIteration:
+    #         if self.f_image:
+    #             print("End of image data.")
+    #             self.f_image = 0          
+    #         img = np.zeros([240,320,3], dtype=np.uint8)           
+    #         return img
+
+    #     t = float(row[0])
+    #     img = cv2.imread(row[2])
+    #     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    #     while time.time() - self.t0 < t:
+    #         continue
+    #     return img
     
     def set_velocity(self):
         try:

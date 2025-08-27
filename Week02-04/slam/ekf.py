@@ -169,9 +169,9 @@ class EKF:
         )
 
         # --- Independent scalings for x, y, theta ---
-        x_scale     = abs(lin_v) * 0.08   # scale factor for x
-        y_scale     = abs(lin_v) * 0.08   # scale factor for y
-        theta_scale = abs(ang_v) * 0.08   # scale factor for θ
+        x_scale     = abs(lin_v) * 0.08   # scale factor for x -0.08
+        y_scale     = abs(lin_v) * 0.08  # scale factor for y -0.08
+        theta_scale = abs(ang_v) * 0.05   # scale factor for θ -0.05
 
         # Build scaling covariance for the robot pose (3x3 block)
         new_cov = np.eye(3)
