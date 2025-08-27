@@ -1,5 +1,4 @@
-# teleoperate the robot and perform SLAM
-# will be extended in following milestones for system integration
+# hello 
 
 # basic python packages
 import numpy as np
