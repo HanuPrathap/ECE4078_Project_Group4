@@ -3,8 +3,13 @@
 # ===============================================
 # Main params to modify
 # ===============================================
+<<<<<<< HEAD
 input_image: final_input.jpg
 output_map_name: final_output.txt
+=======
+input_image: DNB_input1.jpg
+output_map_name: DNB_output1.txt
+>>>>>>> be1e9eb52cdd60df7555ff988d358616584246dc
 
 # a reference map to specify the objects (how many for each type) on the map
 reference_map: example_reference_map.txt
@@ -29,8 +34,13 @@ image_display_res:
 max_click_radius: 25  # unit: [pixels]
 
 arena_size: # unit: [m]
+<<<<<<< HEAD
   x: 2.2
   y: 2.2
+=======
+  x: 2.45
+  y: 2.45
+>>>>>>> be1e9eb52cdd60df7555ff988d358616584246dc
 
 # ===============================================
 # less important params (recommend not to change)

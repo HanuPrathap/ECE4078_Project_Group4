@@ -163,6 +163,7 @@ class EKF:
         # lin_thresh = 0.01
         # ang_thresh = 0.01
 
+<<<<<<< HEAD
         # Get linear and angular velocities from wheel speeds
         lin_v, ang_v = self.robot.convert_wheel_speeds(
             raw_drive_meas.left_speed, raw_drive_meas.right_speed
@@ -189,6 +190,19 @@ class EKF:
 
         
 
+=======
+        # base_cov = 0.01
+
+
+        # if lin_v <= lin_thresh and ang_v <= ang_thresh:
+        #     # sgtationary ish 
+        #     motion_scaling = 0.2 # play around with this
+        motion_scaling=lin_v*0.08
+
+
+        Q = np.zeros((n,n))
+        Q[0:3,0:3] = self.robot.covariance_drive(raw_drive_meas)+ motion_scaling*np.eye(3)
+>>>>>>> be1e9eb52cdd60df7555ff988d358616584246dc
         return Q
 
     def add_landmarks(self, measurements):

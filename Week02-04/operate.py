@@ -128,6 +128,14 @@ class Operate:
         elif self.ekf_on: # and not self.debug_flag:
             self.ekf.predict(drive_meas)
             self.ekf.add_landmarks(lms)
+<<<<<<< HEAD
+=======
+
+            # # now print first marker this is a function that worked last night to get the first marker position 
+            # if operate.ekf.number_landmarks() > 0:
+            #     x0, y0 = operate.ekf.markers[:, 0]
+            #     print(f"First marker: x={x0:.2f}, y={y0:.2f}")
+>>>>>>> be1e9eb52cdd60df7555ff988d358616584246dc
             self.ekf.update(lms)
 
     # save images taken by the camera
@@ -210,7 +218,11 @@ class Operate:
             print("\n--- Landmark positions recorded during SLAM ---")
             for i in range(num_lms):
                 x, y = self.ekf.markers[:, i]
+<<<<<<< HEAD
                 print(f"Landmark {i+1}: x={x:.4f}, y={y:.4f}")
+=======
+                print(f"Landmark {i+1}: x={x:.2f}, y={y:.2f}")
+>>>>>>> be1e9eb52cdd60df7555ff988d358616584246dc
             print("----------------------------------------------\n")
         else:
             print("No landmarks were observed during SLAM.")
