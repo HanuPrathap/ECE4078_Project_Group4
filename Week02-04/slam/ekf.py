@@ -163,16 +163,15 @@ class EKF:
         # lin_thresh = 0.01
         # ang_thresh = 0.01
 
-
         # Get linear and angular velocities from wheel speeds
         lin_v, ang_v = self.robot.convert_wheel_speeds(
             raw_drive_meas.left_speed, raw_drive_meas.right_speed
         )
 
         # --- Independent scalings for x, y, theta ---
-        x_scale     = abs(lin_v) * 0.08   # scale factor for x -0.08
-        y_scale     = abs(lin_v) * 0.08  # scale factor for y -0.08
-        theta_scale = abs(ang_v) * 0.05   # scale factor for θ -0.05
+        x_scale     = abs(lin_v) * 0.01   # scale factor for x - 0.03
+        y_scale     = abs(lin_v) * 0.01  # scale factor for y  - 0.03
+        theta_scale = abs(ang_v) * 0.01  # scale factor for θ  - 0.08
 
         # Build scaling covariance for the robot pose (3x3 block)
         new_cov = np.eye(3)
@@ -189,19 +188,6 @@ class EKF:
 
 
         
-
-
-        # base_cov = 0.01
-
-
-        # if lin_v <= lin_thresh and ang_v <= ang_thresh:
-        #     # sgtationary ish 
-        #     motion_scaling = 0.2 # play around with this
-        motion_scaling=lin_v*0.08
-
-
-        Q = np.zeros((n,n))
-        Q[0:3,0:3] = self.robot.covariance_drive(raw_drive_meas)+ motion_scaling*np.eye(3)
 
         return Q
 
