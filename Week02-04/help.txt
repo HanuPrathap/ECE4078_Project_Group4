@@ -1,9 +1,0 @@
-
-# run this command before we eter slam this command will start slam in recording 
-
-python operate.py --save_data
-
-# after 
-
-python operate.py --play_data
-
