@@ -37,7 +37,7 @@ class Operate:
         self.output = dh.OutputWriter('lab_output')
         self.command = {'motion':[0, 0], 
                         'inference': False,
-                        'output': False,    
+                        'output': False,
                         'save_inference': False,
                         'save_image': False}
         self.quit = False
@@ -142,20 +142,16 @@ class Operate:
             ############### add your codes below ###############
             # drive forward
             if event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
-                #pass # TODO: replace with your code to make the robot drive forward
-                self.command['motion'] = [5, 0]
+                pass # TODO: replace with your code to make the robot drive forward
             # drive backward
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
-                #pass # TODO: replace with your code to make the robot drive backward
-                self.command['motion'] = [-5,0]
+                pass # TODO: replace with your code to make the robot drive backward
             # turn left
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
-                #pass # TODO: replace with your code to make the robot turn left
-                self.command['motion'] = [0, 5]
+                pass # TODO: replace with your code to make the robot turn left
             # drive right
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
-                #pass # TODO: replace with your code to make the robot turn right
-                self.command['motion'] = [0, -5]
+                pass # TODO: replace with your code to make the robot turn right
             ####################################################
             # stop
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
@@ -164,7 +160,6 @@ class Operate:
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_i:
                 self.command['save_image'] = True
             # quit
-            
             elif event.type == pygame.QUIT:
                 self.quit = True
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
