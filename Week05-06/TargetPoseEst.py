@@ -35,10 +35,10 @@ def estimate_pose(camera_matrix, obj_info, robot_pose):
     # there are 8 possible types of fruits and vegs
     ######### Replace with your codes #########
     # TODO: measure actual sizes of targets [width, depth, height] and update the dictionary of true target dimensions
-    target_dimensions_dict = {'orange': [1.0,1.0,1.0], 'lemon': [1.0,1.0,1.0], 
-                              'pear': [1.0,1.0,1.0], 'tomato': [1.0,1.0,1.0], 
-                              'capsicum': [1.0,1.0,1.0], 'potato': [1.0,1.0,1.0], 
-                              'pumpkin': [1.0,1.0,1.0], 'garlic': [1.0,1.0,1.0]}
+    target_dimensions_dict = {'orange': [0.0756, 0.0767, 0.0729], 'lemon': [0.054,0.074, 0.0536], 
+                              'pear': [0.0704, 0.07565, 0.10425], 'tomato': [0.0678, 0.07, 0.0617], 
+                              'capsicum': [0.07487, 0.07447, 0.0931], 'potato': [0.0677, 0.094, 0.0566], 
+                              'pumpkin': [0.08475, 0.08225, 0.07815], 'garlic': [0.0578, 0.0645, 0.0747]}
     #########
 
     # estimate target pose using bounding box and robot pose
@@ -88,7 +88,50 @@ def merge_estimations(target_pose_dict):
 
     ######### Replace with your codes #########
     # TODO: replace it with a solution to merge the multiple occurrences of the same class type (e.g., by a distance threshold)
-    target_est = target_pose_dict
+
+    grouped_classes = {}  # dictionary so it only contains of one each class e.g. orange_0 and orange_1 is just orange
+
+    # identify target poses of the same class type (distance threshold)
+
+    for class_type, pose in (target_pose_dict.items()):
+        class_type = class_type.split("_")[0]
+        if class_type not in grouped_classes:
+            grouped_classes[class_type] = []
+        grouped_classes[class_type].append(pose)  # e.g. grouped_classes["orange"] = [{"x1": ___, y1}, {x2, y2}....}
+        
+    # use clustering or filtering approaches to merge
+    distance_threshold = 0.02  # 2 cm threshold
+
+    merged = {}
+
+    for class_type in grouped_classes:
+        poses = grouped_classes[class_type]  # list
+        merged[class_type] = []  # empty list
+        for i in range(len(poses)):
+            x1 = poses[i]['x']
+            y1 = poses[i]['y']
+
+            added = False
+            for j, cluster in enumerate(merged[class_type]):
+
+                cx = np.mean([p['x'] for p in cluster])
+                cy = np.mean([p['y'] for p in cluster])
+                dist = np.sqrt((cx-x1)**2 + (cy-y1)**2)
+                if abs(dist) <= distance_threshold:
+                    # object belongs to this cluster
+                    if len(merged[class_type][j])<3:
+                        merged[class_type][j].append({'y': y1, 'x': x1})
+                        added = True
+                        break # goes to next pose coordinate
+            
+            if not added:
+                # create a new cluster
+                merged[class_type].append([pose])
+
+    for class_type, clusters in merged.items():
+        for i in range(len(clusters)):
+            target_est[f"{class_type}_{i}"] = clusters[i]
+    
     #########
    
     return target_est
