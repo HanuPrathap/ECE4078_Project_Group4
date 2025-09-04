@@ -49,7 +49,7 @@ Prior to working on this week's materials, please make sure you do the following
 
 **Tip:** For Steps 2 and 3, you are not enforced to implement the calibration scripts provided. In other words, you are encouraged to edit the scripts, or make new scripts from scratch, such that you save time calibrating, or calibrate more accurately!
 
-#### Step 2) Wheel calibration - DONE
+#### Step 2) Wheel calibration
 Complete [wheel_calibration.py](calibration/wheel_calibration.py) by completing the required functionality and filling in the lines of code (computing the [scale parameter](calibration/wheel_calibration.py#L46) and the [baseline parameter](calibration/wheel_calibration.py#L89)), run the [wheel calibration script](calibration/wheel_calibration.py) using the command ```python3 wheel_calibration.py```. This script will set the robot driving forward, and then spinning at various velocities, for durations that you specify, in order to compute the scale and baseline parameters for wheel calibration.
 
 You can mark a 1m long straight line with masking tape on the floor, and use it as a guide to check if the robot has travelled exactly (as close as possible) 1m. Masking tape and measuring tape will be provided to you in the lab.
@@ -60,7 +60,7 @@ You can mark a 1m long straight line with masking tape on the floor, and use it 
 - ```parser.add_argument("--ip", metavar='', type=str, default='192.168.50.1')```
 - ```parser.add_argument("--port", metavar='', type=int, default=8080)```
 
-#### Step 3) Camera calibration - DONE
+#### Step 3) Camera calibration
 Complete [calib_pic.py](calibration/calib_pic.py) using your C1 teleoperation codes and run the completed script using ```python3 calib_pic.py```, then press ENTER to take a calibration photo (It will be saved as [calib_0.png](calibration/images/calib_0.png)) in your [Images folder](calibration/images/). You should place the robot fairly close to the calibration rig to get a good view of the 8 dots. The photo should look something like this:
 
 ![Real calibration photo](screenshots/RealCameraCalib.png?raw=true "Real calibration photo")
@@ -82,6 +82,8 @@ Once you have taken the `calib_0.png` photo with the robot, run ```python3 camer
 **Please complete [robot.py](slam/robot.py) by filling in the computation of the [derivatives](slam/robot.py#L79) and [covariance](slam/robot.py#L127) of the motion model. Please also complete [ekf.py](slam/ekf.py) by filling in the computation of the [predicted robot state](slam/ekf.py#L93) and the [updated robot state](slam/ekf.py#L117) to finish the extended Kalman filter function.**
 
 Once robot.py and ekf.py are completed, you can test the performance of your SLAM by running ```python3 operate.py```
+
+- [New] Please make sure you update the robot's position in the ```Predict()``` function using ```self.robot.drive(raw_drive_meas)``` and the state of the robot and markers in the ```Update()``` function with ```self.set_state_vector(x)``` after updating the values. (Note that these have now been included in the skeleton code as well for reference)
 
 Below are examples of what the GUI running SLAM looks like on physical robot and in sim:
 
@@ -121,5 +123,4 @@ From next milestone onwards, we will be using plastic fruits and vegetables. If 
 - https://amzn.asia/d/jdDttg4
 
 The items take a few weeks to come through. Note - this is NOT an endorsement for the vendor and we are not affiliated with the supplier
-
 
