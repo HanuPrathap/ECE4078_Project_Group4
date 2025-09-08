@@ -8,19 +8,19 @@ import numpy as np
 
 # import utility functions
 sys.path.insert(0, "{}/util".format(os.getcwd()))
-from util.pibot import PenguinPi    # access the robot
-import util.DatasetHandler as dh    # save/load functions
-import util.measure as measure      # measurements
-import pygame                       # python package for GUI
-import shutil                       # python package for file operations
+from util.pibot import PenguinPi  # access the robot
+import util.DatasetHandler as dh   # save/load functions
+import util.measure as measure     # measurements
+import pygame                     # python package for GUI
+import shutil                     # python package for file operations
 
-# import SLAM components you developed in M2
+# import SLAM components
 sys.path.insert(0, "{}/slam".format(os.getcwd()))
 from slam.ekf import EKF
 from slam.robot import Robot
 import slam.aruco_detector as aruco
 
-# import YOLO components 
+# import YOLO components
 from YOLO.detector import Detector
 
 
@@ -48,6 +48,7 @@ class Operate:
             self.data = dh.DatasetWriter('record')
         else:
             self.data = None
+
         self.output = dh.OutputWriter('lab_output')
         self.command = {'motion': [0, 0],
                         'inference': False,
@@ -71,12 +72,15 @@ class Operate:
         self.img = np.zeros([240, 320, 3], dtype=np.uint8)
         self.aruco_img = np.zeros([240, 320, 3], dtype=np.uint8)
         self.detector_output = np.zeros([240, 320], dtype=np.uint8)
+
+        # YOLO setup
         if args.yolo_model == "":
             self.detector = None
             self.yolo_vis = cv2.imread('pics/8bit/detector_splash.png')
         else:
             self.detector = Detector(args.yolo_model)
             self.yolo_vis = np.ones((240, 320, 3)) * 100
+
         self.bg = pygame.image.load('pics/gui_mask.jpg')
 
     # wheel control
@@ -84,8 +88,7 @@ class Operate:
         if args.play_data:
             lv, rv = self.pibot.set_velocity()
         else:
-            lv, rv = self.pibot.set_velocity(
-                self.command['motion'])
+            lv, rv = self.pibot.set_velocity(self.command['motion'])
         if self.data is not None:
             self.data.write_keyboard(lv, rv)
         dt = time.time() - self.control_clock
@@ -101,11 +104,10 @@ class Operate:
     # camera control
     def take_pic(self):
         self.img = self.pibot.get_image()
-
         if self.data is not None:
             self.data.write_image(self.img)
 
-    # SLAM with ARUCO markers       
+    # SLAM with ARUCO markers
     def update_slam(self, drive_meas):
         lms, self.aruco_img = self.aruco_det.detect_marker_positions(self.img)
         if self.request_recover_robot:
@@ -125,20 +127,17 @@ class Operate:
     # using computer vision to detect targets
     def detect_target(self):
         if self.command['inference'] and self.detector is not None:
-            # need to convert the colour before passing to YOLO
+            # convert colour before passing to YOLO
             yolo_input_img = cv2.cvtColor(self.img, cv2.COLOR_RGB2BGR)
-
             self.detector_output, self.yolo_vis = self.detector.detect_single_image(yolo_input_img)
-
-            # covert the colour back for display purpose
+            # convert colour back for display
             self.yolo_vis = cv2.cvtColor(self.yolo_vis, cv2.COLOR_RGB2BGR)
-
-            # self.command['inference'] = False     # uncomment this if you do not want to continuously predict
+            # keep most recent frame and ekf together for saving
             self.file_output = (yolo_input_img, self.ekf)
+            # optional one shot
+            # self.command['inference'] = False
 
-            # self.notification = f'{len(self.detector_output)} target type(s) detected'
-
-    # save raw images taken by the camera
+    # save images taken by the camera
     def save_image(self):
         f_ = os.path.join(self.folder, f'img_{self.image_id}.png')
         if self.command['save_image']:
@@ -164,7 +163,7 @@ class Operate:
         robot = Robot(baseline, scale, camera_matrix, dist_coeffs)
         return EKF(robot)
 
-    # save SLAM map
+    # save SLAM map and detector outputs
     def record_data(self):
         if self.command['output']:
             self.output.write_map(self.ekf)
@@ -173,15 +172,14 @@ class Operate:
         # save inference with the matching robot pose and detector labels
         if self.command['save_inference']:
             if self.file_output is not None:
-                # image = cv2.cvtColor(self.file_output[0], cv2.COLOR_RGB2BGR)
                 self.pred_fname = self.output.write_image(self.file_output[0],
                                                           self.file_output[1])
                 self.notification = f'Prediction is saved to {operate.pred_fname}'
             else:
-                self.notification = f'No prediction in buffer, save ignored'
+                self.notification = 'No prediction in buffer, save ignored'
             self.command['save_inference'] = False
 
-    # paint the GUI            
+    # paint the GUI
     def draw(self, canvas):
         canvas.blit(self.bg, (0, 0))
         text_colour = (220, 220, 220)
@@ -193,24 +191,17 @@ class Operate:
                                             not_pause=self.ekf_on)
         canvas.blit(ekf_view, (2 * h_pad + 320, v_pad))
         robot_view = cv2.resize(self.aruco_img, (320, 240))
-        self.draw_pygame_window(canvas, robot_view,
-                                position=(h_pad, v_pad)
-                                )
+        self.draw_pygame_window(canvas, robot_view, position=(h_pad, v_pad))
 
-        # for target detector (M3)
+        # detector view
         detector_view = cv2.resize(self.yolo_vis, (320, 240), cv2.INTER_NEAREST)
-        self.draw_pygame_window(canvas, detector_view,
-                                position=(h_pad, 240 + 2 * v_pad)
-                                )
+        self.draw_pygame_window(canvas, detector_view, position=(h_pad, 240 + 2 * v_pad))
 
-        # canvas.blit(self.gui_mask, (0, 0))
         self.put_caption(canvas, caption='SLAM', position=(2 * h_pad + 320, v_pad))
-        self.put_caption(canvas, caption='Detector',
-                         position=(h_pad, 240 + 2 * v_pad))
+        self.put_caption(canvas, caption='Detector', position=(h_pad, 240 + 2 * v_pad))
         self.put_caption(canvas, caption='PiBot Cam', position=(h_pad, v_pad))
 
-        notifiation = TEXT_FONT.render(self.notification,
-                                       False, text_colour)
+        notifiation = TEXT_FONT.render(self.notification, False, text_colour)
         canvas.blit(notifiation, (h_pad + 10, 596))
 
         time_remain = self.count_down - time.time() + self.start_time
@@ -224,6 +215,19 @@ class Operate:
         canvas.blit(count_down_surface, (2 * h_pad + 320 + 5, 530))
         return canvas
 
+    # your landmark dump util
+    def print_landmarks(self):
+        num_lms = self.ekf.number_landmarks()
+        if num_lms > 0:
+            print("\n--- Landmark positions recorded during SLAM ---")
+            for i in range(num_lms):
+                x, y = self.ekf.markers[:, i]
+                print(f"Landmark {i+1}: x={x:.4f}, y={y:.4f}")
+                print(f"Landmark {i+1}: x={x:.2f}, y={y:.2f}")
+            print("----------------------------------------------\n")
+        else:
+            print("No landmarks were observed during SLAM.")
+
     @staticmethod
     def draw_pygame_window(canvas, cv2_img, position):
         cv2_img = np.rot90(cv2_img)
@@ -233,25 +237,21 @@ class Operate:
 
     @staticmethod
     def put_caption(canvas, caption, position, text_colour=(200, 200, 200)):
-        caption_surface = TITLE_FONT.render(caption,
-                                            False, text_colour)
+        caption_surface = TITLE_FONT.render(caption, False, text_colour)
         canvas.blit(caption_surface, (position[0], position[1] - 25))
 
-    # keyboard teleoperation, replace with your M1 codes if preferred        
+    # keyboard teleoperation
     def update_keyboard(self):
         for event in pygame.event.get():
-            # drive forward
+            # M1 style direct set
             if event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
-                self.command['motion'][0] = min(self.command['motion'][0] + 1, 1)
-            # drive backward
+                self.command['motion'] = [1, 0]
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
-                self.command['motion'][0] = max(self.command['motion'][0] - 1, -1)
-            # turn left
+                self.command['motion'] = [-1, 0]
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
-                self.command['motion'][1] = min(self.command['motion'][1] + 1, 1)
-            # drive right
+                self.command['motion'] = [0, 1]
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
-                self.command['motion'][1] = max(self.command['motion'][1] - 1, -1)
+                self.command['motion'] = [0, -1]
             # stop
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 self.command['motion'] = [0, 0]
@@ -314,7 +314,7 @@ if __name__ == "__main__":
     parser.add_argument("--calib_dir", type=str, default="calibration/param/")
     parser.add_argument("--save_data", action='store_true')
     parser.add_argument("--play_data", action='store_true')
-    parser.add_argument("--yolo_model", default='YOLO/model/yolov8_model.pt')
+    parser.add_argument("--yolo_model", default='YOLO/model/best.pt')
     args, _ = parser.parse_known_args()
 
     pygame.font.init()
