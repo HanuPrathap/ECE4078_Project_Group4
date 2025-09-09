@@ -52,7 +52,9 @@ def parse_object_map(fname):
     for key in usr_dict:
         object_type = key.split('_')[0]
         if object_type not in target_dict:
-            target_dict[object_type] = np.array([[usr_dict[key]['x'], usr_dict[key]['y']]])
+            target_dict[object_type] = np.array([[usr_dict[key]['x'], usr_dict[key]['y']]]) # - monashh code 
+            # target_dict[key] = np.array([[obj['x'], obj['y']] for obj in usr_dict[key]]) # my code - dont need this i think cause i fixed the error with target_poseest
+
         else:
             target_dict[object_type] = np.append(target_dict[object_type], [[usr_dict[key]['x'], usr_dict[key]['y']]], axis=0)
 

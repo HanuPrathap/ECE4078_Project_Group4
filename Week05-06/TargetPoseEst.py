@@ -9,6 +9,9 @@ from YOLO.detector import Detector
 
 # list of target fruits and vegs types
 # Make sure the names are the same as the ones used in your YOLO model
+
+# update this for different colours of the same fruit - this isnt used later tho it uses clases from decctro.py class_clour map 
+
 TARGET_TYPES = ['orange', 'lemon', 'pear', 'tomato', 'capsicum', 'potato', 'pumpkin', 'garlic']
 
 
@@ -34,11 +37,15 @@ def estimate_pose(camera_matrix, obj_info, robot_pose):
 
     # there are 8 possible types of fruits and vegs
     ######### Replace with your codes #########
-    # TODO: measure actual sizes of targets [width, depth, height] and update the dictionary of true target dimensions
+    # TODO: update measure actual sizes of targets [width, depth, height] and update the dictionary of true target dimensions
+    # TODO: need to make sure our yolo model has all the classes possibles - and pictures of fruits 
+
     target_dimensions_dict = {'orange': [0.0756, 0.0767, 0.0729], 'lemon': [0.054,0.074, 0.0536], 
                               'pear': [0.0704, 0.07565, 0.10425], 'tomato': [0.0678, 0.07, 0.0617], 
                               'capsicum': [0.07487, 0.07447, 0.0931], 'potato': [0.0677, 0.094, 0.0566], 
-                              'pumpkin': [0.08475, 0.08225, 0.07815], 'garlic': [0.0578, 0.0645, 0.0747]}
+                              'pumpkin': [0.08475, 0.08225, 0.07815], 'garlic': [0.0578, 0.0645, 0.0747],
+                              'apple': [0.0678, 0.07, 0.0617], 'capsicum_green': [0.07487, 0.07447, 0.0931],
+                              'capsicum_yellow': [0.07487, 0.07447, 0.0931], 'pear_yellow' : [0.0704, 0.07565, 0.10425]}
     #########
 
     # estimate target pose using bounding box and robot pose
@@ -69,6 +76,9 @@ def estimate_pose(camera_matrix, obj_info, robot_pose):
     # add robot pose with delta target pose
     target_pose = {'y': (robot_pose[1]+delta_y_world)[0],
                    'x': (robot_pose[0]+delta_x_world)[0]}
+    
+    # TODO could use the following for test
+
     #print(f'delta_x_world: {delta_x_world}, delta_y_world: {delta_y_world}')
     #print(f'target_pose: {target_pose}')
 
@@ -125,8 +135,11 @@ def merge_estimations(target_pose_dict):
                         break # goes to next pose coordinate
             
             if not added:
-                # create a new cluster
-                merged[class_type].append([pose])
+                # create a new cluster 
+                # TODO fixed this i think - double check 
+                merged[class_type].append([poses[i]])  
+
+                
 
     for class_type, clusters in merged.items():
         for i in range(len(clusters)):
@@ -146,7 +159,7 @@ if __name__ == "__main__":
     camera_matrix = np.loadtxt(fileK, delimiter=',')
 
     # init YOLO model
-    model_path = f'{script_dir}/YOLO/model/yolov8_model.pt'
+    model_path = f'{script_dir}/YOLO/model/best.pt'
     yolo = Detector(model_path)
 
     # create a dictionary of all the saved images with their corresponding robot pose
