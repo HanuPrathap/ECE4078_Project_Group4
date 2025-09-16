@@ -6,19 +6,30 @@ from ultralytics import YOLO
 from ultralytics.utils import ops
 
 
+
+
 class Detector:
+    # pass in the path of where the model.pt file is 
     def __init__(self, model_path):
         self.model = YOLO(model_path)
 
+
+        # TODO have to fix this because of added fruit and make sure it is accuracte with colour 
         self.class_colour = {
-            'orange': (0, 165, 255),
+            'orange': (0, 165, 251),
             'lemon': (0, 255, 255),
-            'pear': (0, 128, 0),
-            'tomato': (0, 0, 255),
-            'capsicum': (255, 0, 0),
-            'potato': (255, 255, 0),
-            'pumpkin': (255, 165, 0),
-            'garlic': (255, 0, 255)
+            'pear_green': (0, 128, 0),
+            'pear_brown': (42, 42, 165),
+            'pear_yellow': (0, 250, 255),
+            'tomato': (0, 0, 254),
+            'capsicum_red': (0, 0, 255),
+            'capsicum_yellow': (0, 255, 253),
+            'capsicum_green': (0, 129, 0),
+            'potato': (253, 255, 0),
+            'pumpkin_green': (0, 128, 0),
+            'pumpkin_orange': (255, 162, 0),
+            'garlic': (255, 0, 251),
+            'apple': (0, 0, 128)  # Add apple with a color
         }
 
     def detect_single_image(self, img):
@@ -44,12 +55,11 @@ class Detector:
             x2 = int(xyxy[2])
             y2 = int(xyxy[3])
 
-            # draw bounding box
-            img_out = cv2.rectangle(img_out, (x1, y1), (x2, y2), self.class_colour[bbox[0]], thickness=2)
+            # Use a default color if class is not in the dictionary
+            color = self.class_colour.get(bbox[0], (255, 255, 255))
 
-            # draw class label
-            img_out = cv2.putText(img_out, bbox[0], (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                                  self.class_colour[bbox[0]], 2)
+            img_out = cv2.rectangle(img_out, (x1, y1), (x2, y2), color, thickness=2)
+            img_out = cv2.putText(img_out, bbox[0], (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
         return bboxes, img_out
 
@@ -88,7 +98,13 @@ if __name__ == '__main__':
     # get current script directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
-    yolo = Detector(f'{script_dir}/model/yolov8_model.pt')
+
+    # TODO do i need to change this so that it uses the actual yolo model 
+    yolo = Detector(f'{script_dir}/model/best.pt')
+
+    # TODO so i change this to wherever the images show up right ?? or is it not in this file since its for testing only 
+
+    # img = cv2.imread(f'{script_dir}/Week05-06/lab_output')
 
     img = cv2.imread(f'{script_dir}/test/test_image_1.png')
 
