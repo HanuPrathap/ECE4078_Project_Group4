@@ -14,7 +14,7 @@ import glob
 from copy import deepcopy
 
 # Settings
-VARIATION_PER_BACKGROUND = 10  # The number of variations per background
+VARIATION_PER_BACKGROUND = 3  # The number of variations per background
 MAX_RESIZE_FACTOR = 1.4  # The maximum resize factor for the image, shrink or enlarge
 MIN_RESIZE_FACTOR = 0.3  # The minimum resize factor for the image, shrink or enlarge
 
