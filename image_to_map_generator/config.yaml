@@ -3,27 +3,29 @@
 # ===============================================
 # Main params to modify
 # ===============================================
-<<<<<<< HEAD
-input_image: final_input.jpg
+
+input_image: input_M2.jpg
 output_map_name: final_output.txt
-=======
-input_image: DNB_input1.jpg
-output_map_name: DNB_output1.txt
->>>>>>> be1e9eb52cdd60df7555ff988d358616584246dc
+
 
 # a reference map to specify the objects (how many for each type) on the map
 reference_map: example_reference_map.txt
 
 # fruits - list of fruits to be placed in the arena and their colours
+
 fruits: # BGR 
   lemon: [0, 255, 255] # Yellow
   pumpkin: [0, 128, 255] # Orange  
   tomato: [0, 0, 255]  # Red
-  lime: [0, 102, 0] # Dark green
+  lime: [0, 255, 0] # green
   garlic: [255, 255, 255] # White
   capsicum: [255, 255, 0] # Cyan
   potato: [0, 51, 102] # Dark brown
   pear: [51, 255, 51] # Bright green
+  orange: [0, 128, 255] # orange 2
+
+
+
 
 # change this if the GUI is too big for your screen
 image_display_res:
@@ -34,13 +36,11 @@ image_display_res:
 max_click_radius: 25  # unit: [pixels]
 
 arena_size: # unit: [m]
-<<<<<<< HEAD
-  x: 2.2
-  y: 2.2
-=======
-  x: 2.45
-  y: 2.45
->>>>>>> be1e9eb52cdd60df7555ff988d358616584246dc
+
+
+  x: 3
+  y: 3
+
 
 # ===============================================
 # less important params (recommend not to change)

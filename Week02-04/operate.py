@@ -33,6 +33,7 @@ class Operate:
         # initialise data parameters
         if args.play_data:
             self.pibot = dh.DatasetPlayer("record")
+            self.notification = 'PLAYING BACK recorded data - Press ENTER to start SLAM'
         else:
             self.pibot = PenguinPi(args.ip, args.port)
 
@@ -43,6 +44,7 @@ class Operate:
 
         if args.save_data:
             self.data = dh.DatasetWriter('record')
+            self.notification = 'RECORDING data - Press ENTER to start SLAM'
         else:
             self.data = None
         self.output = dh.OutputWriter('lab_output')
@@ -58,7 +60,7 @@ class Operate:
         self.ekf_on = False
         self.double_reset_comfirm = 0
         self.image_id = 0
-        self.notification = 'Press ENTER to start SLAM'
+        self.notification = 'LIVE - Press ENTER to start SLAM'
         # a 5min timer
         self.count_down = 300
         self.start_time = time.time()
@@ -68,16 +70,6 @@ class Operate:
         self.aruco_img = np.zeros([240,320,3], dtype=np.uint8)  
         self.bg = pygame.image.load('pics/gui_mask.jpg')
 
-
-        # # video writer
-        # fourcc = cv2.VideoWriter_fourcc(*'XVID')  # codec: .avi file
-        # self.video_writer = cv2.VideoWriter(
-        #     os.path.join(self.folder, 'pibot_video.avi'),
-        #     fourcc,
-        #     20.0,  # fps (match your camera rate, often ~20–30 fps)
-        #     (320, 240)  # resolution, must match self.img size
-        # )
-        # self.record_video = False
 
     # wheel control
     def control(self):     
