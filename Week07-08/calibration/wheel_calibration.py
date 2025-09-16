@@ -3,6 +3,7 @@ import numpy as np
 import os
 import sys
 sys.path.insert(0, "../util")
+sys.path.insert(0, r"C:/Users/gurvi/Desktop/ECE4078/Project_G04/ECE4078_Project_Group4/Week07-08/util".format(os.getcwd()))
 from pibot import PenguinPi
 
 
@@ -81,7 +82,7 @@ def calibrateBaseline(scale):
     #         uInput = input("Did the robot spin 360deg?[y/N]")
     #         if uInput == 'y':
     #             delta_times.append(delta_time)
-    #             print("Recording that the robot spun 360deg in {:.2f} seconds at wheel speed {}.\n".format(delta_time,
+    #             print("Recording that the robot spun 360deg in {:.2f} seconds at wheel speed {}./n".format(delta_time,
     #                                                                                                        wheel_vel))
     #             break
 
@@ -111,14 +112,14 @@ if __name__ == "__main__":
     ppi = PenguinPi(args.ip,args.port)
 
     # calibrate pibot scale and baseline
-    dataDir = "{}/param/".format(os.getcwd())
+    dataDir = "C:/Users/gurvi/Desktop/ECE4078/Project_G04/ECE4078_Project_Group4/Week07-08/calibration/param".format(os.getcwd())
 
-    print('Calibrating PiBot scale...\n')
+    print('Calibrating PiBot scale.../n')
     scale = calibrateWheelRadius()
     fileNameS = "{}scale.txt".format(dataDir)
     np.savetxt(fileNameS, np.array([scale]), delimiter=',')
 
-    print('Calibrating PiBot baseline...\n')
+    print('Calibrating PiBot baseline.../n')
     baseline = calibrateBaseline(scale)
     fileNameB = "{}baseline.txt".format(dataDir)
     np.savetxt(fileNameB, np.array([baseline]), delimiter=',')
