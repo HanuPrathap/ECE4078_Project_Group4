@@ -38,7 +38,6 @@ def estimate_pose(camera_matrix, obj_info, robot_pose):
     # there are 8 possible types of fruits and vegs
     ######### Replace with your codes #########
     # TODO: update measure actual sizes of targets [width, depth, height] and update the dictionary of true target dimensions
-    # TODO: need to make sure our yolo model has all the classes possibles - and pictures of fruits 
 
     target_dimensions_dict = {'orange': [0.0756, 0.0767, 0.0729], 'lemon': [0.054,0.074, 0.0536], 
                               'pear': [0.0704, 0.07565, 0.10425], 'tomato': [0.0678, 0.07, 0.0617], 
