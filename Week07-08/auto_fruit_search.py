@@ -5,26 +5,44 @@
 # provides a skeletonn for naviagtion where you enter way points and the robot drives to them 
 
 
+ARENA_SIZE_M = 2.5
+WORLD_X_MIN, WORLD_X_MAX = -ARENA_SIZE_M / 2, ARENA_SIZE_M / 2
+WORLD_Y_MIN, WORLD_Y_MAX = -ARENA_SIZE_M / 2, ARENA_SIZE_M / 2
+
+PAD = 20
+PANEL_W = 480
+PANEL_H = 480
+MAP_ORIGIN_PX = (PAD, PAD)
+
+WIN_W = PANEL_W + 2 * PAD
+WIN_H = PANEL_H + 100
 
 # basic python packages
+
+import pygame # for GUI
 import sys, os
 import cv2
 import numpy as np
 import json
 import argparse
 import time
+import matplotlib.pyplot as plt #  for GUI
+
 
 # import SLAM components
-sys.path.insert(0, "C:/Users/gurvi/Desktop/ECE4078/Project_G04/ECE4078_Project_Group4/Week07-08/slam".format(os.getcwd()))
+sys.path.insert(0, "C:/Users/jessi/Documents/2025/ECE4078/ECE4078_Project_Group4/Week07-08/slam")
+
 from slam.ekf import EKF
 from slam.robot import Robot
 import slam.aruco_detector as aruco
 
 # import utility functions
 sys.path.insert(0, "util")
-sys.path.insert(0, "C:/Users/gurvi/Desktop/ECE4078/Project_G04/ECE4078_Project_Group4/Week07-08/util".format(os.getcwd()))
-from pibot import PenguinPi
-import measure as measure
+sys.path.insert(0, "C:/Users/jessi/Documents/2025/ECE4078/ECE4078_Project_Group4/Week07-08/util")
+
+
+from util.pibot import PenguinPi
+import util.measure as measure
 
 
 # import Helper functions - jas
@@ -126,14 +144,13 @@ def drive_to_point(waypoint, robot_pose):
     current_robot_pose = np.array(robot_pose)
     waypoint = np.array(waypoint)
 
-
-    # TODO - jas: create varibles used to navigate to waypoints 
+    # TODO 
     threshold_distance = 0.25 # 0.25 meters 
     threshold_angle = 0.05  # Tighter threshold # doesnt matter for now 
     max_iterations = 1000
     iteration = 0
 
-    # TODO - jas: might need to change this
+    # TODO 
     # imports camera / wheel calibration parameters 
     fileS = "calibration/param/scale.txt"
     scale = np.loadtxt(fileS, delimiter=',')
@@ -162,7 +179,9 @@ def drive_to_point(waypoint, robot_pose):
     print(f"the angle to turn to face waypoint {heading_to_waypoint} rads")
 
     # Compute times as scalars
-    drive_time = distance_to_waypoint / (wheel_vel * scale)
+    drive_time = distance_to_waypoint / (wheel_vel * scale)  
+    drive_time = min(drive_time, 19.0)  # stay under 20s
+
     turn_time = (2.0 * heading_to_waypoint * scale * wheel_vel) / baseline
     turn_dir = 1 if heading_to_waypoint >= 0 else -1
 
@@ -187,6 +206,111 @@ def get_robot_pose(robot): # pass in the robot instance
     ####################################################
 
     return robot_pose
+
+
+# def draw_GUI(self, canvas): # draw the map window, heavily based on M2 and M1 code (operate.py)
+#     canvas.blit(self.bg, (0, 0))
+#     text_colour = (220, 220, 220)
+#     v_pad = 40
+#     h_pad = 20
+
+#     # paint SLAM outputs
+#     ekf_view = self.ekf.draw_slam_state(res=(320, 480 + v_pad),
+#                                             not_pause=self.ekf_on)
+#     canvas.blit(ekf_view, (2 * h_pad + 320, v_pad))
+#     robot_view = cv2.resize(self.aruco_img, (320, 240))
+#     self.draw_pygame_window(canvas, robot_view, position=(h_pad, v_pad))
+
+#     # detector view
+#     detector_view = cv2.resize(self.yolo_vis, (320, 240), cv2.INTER_NEAREST)
+#     self.draw_pygame_window(canvas, detector_view, position=(h_pad, 240 + 2 * v_pad))
+
+#     self.put_caption(canvas, caption='SLAM', position=(2 * h_pad + 320, v_pad))
+#     self.put_caption(canvas, caption='Detector', position=(h_pad, 240 + 2 * v_pad))
+#     self.put_caption(canvas, caption='PiBot Cam', position=(h_pad, v_pad))
+
+#     notifiation = TEXT_FONT.render(self.notification, False, text_colour)
+#     canvas.blit(notifiation, (h_pad + 10, 596))
+
+#     time_remain = self.count_down - time.time() + self.start_time
+#     if time_remain > 0:
+#         time_remain = f'Count Down: {time_remain:03.0f}s'
+#     elif int(time_remain) % 2 == 0:
+#         time_remain = "Time Is Up !!!"
+#     else:
+#         time_remain = ""
+#         count_down_surface = TEXT_FONT.render(time_remain, False, (50, 50, 50))
+#         canvas.blit(count_down_surface, (2 * h_pad + 320 + 5, 530))
+#         return canvas
+
+
+def select_waypoint(map_img_path): # function to choose waypoint on GUI
+    # if event.type == pygame.MOUSEBUTTONDOWN: 
+    #     mx, my = event.pos # get the position of the click point
+
+    #     # check if click occurred inside the map window
+    #     if 2*h_pad + 320 < mx < 2*h_pad + 640 and v_pad < my < v_pad + 480:
+
+    pygame.init()
+
+    img = plt.imread(map_img_path)
+    fig, ax = plt.subplots()
+        # --- Dark GUI styling ---
+    fig.patch.set_facecolor('#121212')  # figure background
+    ax.set_facecolor('#121212')         # axes background
+    ax.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)  # remove ticks
+    for spine in ax.spines.values():    # remove axes borders
+        spine.set_visible(False)
+    ax.grid(False)
+
+    plt.ion()            # interactive mode ON
+    plt.show(block=False)  # non-blocking
+    # Overlay image with slight darkening (alpha)
+    ax.imshow(img, alpha=0.9)  # reduce alpha to blend with dark background
+
+    waypoints = []
+    scatter_plot = None
+
+    # pick points
+    def onclick(event):  # heavily inspired from camera_calibration.py
+        nonlocal scatter_plot
+        global p, idx
+        if event.inaxes !=  ax:
+            return # click occurs outside map --> ignore
+        if event.button == 1:  # left click occurs
+            waypoints.append([event.xdata, event.ydata])
+            print(f"Added waypoint: {waypoints[-1]}")
+            
+            if scatter_plot:
+                scatter_plot.remove()
+            wp = waypoints[-1]
+            scatter_plot = ax.scatter([wp[0]], [wp[1]], c="red", marker="o")
+            fig.canvas.draw()
+
+    cid = fig.canvas.mpl_connect("button_press_event", onclick)
+
+
+
+    map_width_m = 4.0    # width in meters
+    map_height_m = 3.0   # height in meters
+
+    img = plt.imread(map_img_path)
+    img_height, img_width, _ = img.shape
+    while not waypoints:
+        plt.pause(0.1)
+
+    fig.canvas.mpl_disconnect(cid)
+    
+    wp = waypoints[-1]
+    # Convert pixels to meters
+    x_m = wp[0] / img_width * map_width_m
+    y_m = wp[1] / img_height * map_height_m
+
+    print(x_m)
+    print(y_m)
+
+     
+    return x_m, y_m
 
 # main loop
 if __name__ == "__main__":
@@ -221,18 +345,22 @@ if __name__ == "__main__":
         # enter the waypoints
         # instead of manually enter waypoints, you can give coordinates by clicking on a map, see camera_calibration.py from M2
         x,y = 0.0,0.0
-        x = input("X coordinate of the waypoint: ")
-        try:
-            x = float(x)
-        except ValueError:
-            print("Please enter a number.")
-            continue
-        y = input("Y coordinate of the waypoint: ")
-        try:
-            y = float(y)
-        except ValueError:
-            print("Please enter a number.")
-            continue
+        x,y = select_waypoint("ground_truth_map.png")
+        print(x)
+        print(y)
+
+        # x = input("X coordinate of the waypoint: ")  # command line input
+        # try:
+        #     x = float(x)
+        # except ValueError:
+        #     print("Please enter a number.")
+        #     continue
+        # y = input("Y coordinate of the waypoint: ")
+        # try:
+        #     y = float(y)
+        # except ValueError:
+        #     print("Please enter a number.")
+        #     continue
 
         # estimate the robot's pose
         robot_pose = get_robot_pose(robot)

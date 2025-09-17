@@ -27,7 +27,6 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import *
 from numpy import ndarray
 
-
 @dataclass
 class Parameters:
     DesiredGroundTruth: str # File path to the reference map file
@@ -43,7 +42,6 @@ class Parameters:
     Objects: list[list]
 
     ArUcoBlockSize: float
-
     # Rendering stuff
     BorderSize: int
     GridSize: int
