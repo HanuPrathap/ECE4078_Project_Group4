@@ -4,9 +4,7 @@
 # prints target fruits position in a specified order 
 # provides a skeletonn for naviagtion where you enter way points and the robot drives to them 
 
-# RUN python Week07-08/gui.py image_to_map_generator/generated_ground_truth_maps/final_output.txt
-
-
+# RUN python Week07-08/gui.py --map image_to_map_generator/generated_ground_truth_maps/final_output.txt
 ARENA_SIZE_M = 3   # need to change this 2.4 on the actual day
 WORLD_X_MIN, WORLD_X_MAX = -ARENA_SIZE_M / 2, ARENA_SIZE_M / 2
 WORLD_Y_MIN, WORLD_Y_MAX = -ARENA_SIZE_M / 2, ARENA_SIZE_M / 2
@@ -137,9 +135,9 @@ def print_target_fruits_pos(search_list, fruit_list, fruit_true_pos):
         for i in range(len(fruit_list)): # there are 5 targets amongst 10 objects
             if fruit == fruit_list[i]:
                 print('{}) {} at [{}, {}]'.format(n_fruit,
-                                                  fruit,
-                                                  np.round(fruit_true_pos[i][0], 1),
-                                                  np.round(fruit_true_pos[i][1], 1)))
+                                                fruit,
+                                                np.round(fruit_true_pos[i][0], 1),
+                                                np.round(fruit_true_pos[i][1], 1)))
         n_fruit += 1
 
 
@@ -228,25 +226,7 @@ class Pose:
     th: float = 0.0  # radians
 
 
-def rotate_ccw_90(x,y):
-    return y, -x
 
-
-def rotate_cw_90_px(u, v):
-    """Rotate a pixel coordinate 90° clockwise around the center of the map panel."""
-    cx = MAP_ORIGIN_PX[0] + PANEL_W / 2
-    cy = MAP_ORIGIN_PX[1] + PANEL_H / 2
-    
-    # Translate so center is origin
-    dx = u - cx
-    dy = v - cy
-    
-    # Rotate 90° clockwise
-    rx = dy
-    ry = dx
-    
-    # Translate back
-    return int(rx + cx), int(ry + cy)
 
 
 def px_to_world(u: int, v: int):
@@ -262,7 +242,6 @@ def px_to_world(u: int, v: int):
 
 def world_to_px(x: float, y: float, origin_px=MAP_ORIGIN_PX):
     x0, y0 = origin_px
-    x0, y0 = rotate_ccw_90(x0,y0)
     su = (x - WORLD_X_MIN) / (WORLD_X_MAX - WORLD_X_MIN)
     sv = (WORLD_Y_MAX - y) / (WORLD_Y_MAX - WORLD_Y_MIN)
     u = int(x0 + su * PANEL_W)
@@ -298,8 +277,6 @@ def draw_groundtruth_map(screen, fruits_true_pos, fruit_list, aruco_true_pos, or
     # Draw fruits
     for i, pos in enumerate(fruits_true_pos):
         u, v = world_to_px(pos[0], pos[1], origin_px = origin_px)
-        u,v = rotate_cw_90_px(u,v)
-        #u,v = rotate_ccw_90(u,v)
         pygame.draw.circle(screen, (255, 165, 0), (u, v), 6)  # orange dot for fruits
         # optional: label
         font = pygame.font.SysFont("consolas", 14)
@@ -309,15 +286,13 @@ def draw_groundtruth_map(screen, fruits_true_pos, fruit_list, aruco_true_pos, or
     # Draw ArUco markers
     for i, pos in enumerate(aruco_true_pos):
         u, v = world_to_px(pos[0], pos[1], origin_px = origin_px)
-        # u,v = rotate_ccw_90(u,v)
-        u,v = rotate_cw_90_px(u,v)
         pygame.draw.rect(screen, (0, 255, 0), (u-4, v-4, 8, 8))  # green square for markers
         font = pygame.font.SysFont("consolas", 12)
         label = font.render(f"A{i+1}", True, (0,255,0))
         screen.blit(label, (u+5, v-5))
 
 def draw_robot(screen, pose: Pose, origin_px = MAP_ORIGIN_PX):
-    thet_rot = pose.th + math.pi/2
+    thet_rot = pose.th
     u, v = world_to_px(pose.x, pose.y, origin_px = origin_px)
     pygame.draw.circle(screen, (0, 180, 255), (u, v), 8)  # blue dot
     hx = u + int(14 * math.cos(thet_rot))
@@ -370,6 +345,7 @@ if __name__ == "__main__":
     screen = pygame.display.set_mode((WIN_W, WIN_H))
     pygame.display.set_caption("M3 Fruit Search - Click-to-Go")
     clock = pygame.time.Clock()
+
     robot_pose = Pose(0.0, 0.0, 0.0) 
 
     goal_xy = None
@@ -403,7 +379,7 @@ if __name__ == "__main__":
         # drive to goal if set
         if goal_xy is not None and not busy:
             drive_to_point([goal_xy[0], goal_xy[1]], [robot_pose.x, robot_pose.y, robot_pose.th])
-            robot_pose.x, robot_pose.y = goal_xy
+            robot_pose.x, robot_pose.y= goal_xy
             goal_xy = None
 
         # Draw map + robot
@@ -411,13 +387,13 @@ if __name__ == "__main__":
         screen.fill((10,10,12))
         map_pos = (PAD, PAD)
         draw_map(screen, origin_px = map_pos)  # grid + background
-        
+        draw_robot(screen, pose = robot_pose, origin_px = map_pos)
         draw_groundtruth_map(screen, fruits_true_pos, fruits_list, aruco_true_pos, origin_px = map_pos)
         if goal_xy:
             draw_goal(screen, goal_xy, origin_px = map_pos)
         camera_pos = (MAP_W + 2*PAD, PAD)
         
-        pibot_frame = ppi.get_camera_frame()  # refresh pibot camera
+        pibot_frame = ppi.get_image()  # refresh pibot camera
         draw_pibot_camera(pibot_frame, screen, pos = camera_pos)
 
         pygame.display.flip()
@@ -429,4 +405,4 @@ if __name__ == "__main__":
     ## change parser arg -- DONE
     ## change GUI so starts with robot front facing north --> DONE
     ## change waypoints so it is meters based not pixel based
-    # add piBot camera to GUI
+    ## add piBot camera to GUI -- DONE
