@@ -12,6 +12,12 @@ import json
 import argparse
 import time
 
+# --- Arena configuration ---
+ARENA_SIZE_M = 3.0   # or 2.4 on the real day
+WORLD_X_MIN, WORLD_X_MAX = -ARENA_SIZE_M / 2, ARENA_SIZE_M / 2
+WORLD_Y_MIN, WORLD_Y_MAX = -ARENA_SIZE_M / 2, ARENA_SIZE_M / 2
+
+
 # --- SLAM components (kept ready, not used in this odom-only demo) ---
 sys.path.insert(0, os.path.join(os.getcwd(), "slam"))
 from slam.ekf import EKF
@@ -108,7 +114,9 @@ def drive_to_point(ppi, waypoint, robot_pose):
 
     drive_time = distance_to_waypoint / (wheel_vel * scale)
     turn_dir   = 1 if heading_to_waypoint >= 0 else -1
-    turn_time  = (2.0 * abs(heading_to_waypoint) * scale * wheel_vel) / baseline
+    ang_rate = (2.0 * wheel_vel * scale) / baseline  # rad/s
+    turn_time = abs(heading_to_waypoint) / ang_rate
+
 
     # execute (timed)
     print(f"Turning {heading_to_waypoint:+.3f} rad for {turn_time:.2f}s")
@@ -126,6 +134,7 @@ def drive_to_point(ppi, waypoint, robot_pose):
 
     new_pose = np.array([x, y, th], dtype=float)
     print(f"Pose (odometry): x={x:.3f}, y={y:.3f}, th={th:.3f}")
+
     return new_pose
 
 def compute_approach_point(robot_xy, fruit_xy, stop_center_radius=0.15):
@@ -177,7 +186,7 @@ if __name__ == "__main__":
         gt_raw = json.load(f)
 
     robot_pose = [0.0, 0.0, 0.0]          # odometry pose
-    targets = search_list[:2]             # lemon, tomato (from your example)
+    targets = search_list[:5]             # lemon, tomato (from your example)
     STOP_CENTER_RADIUS = 0.15
     HOLD_SECONDS = 3.0
 
