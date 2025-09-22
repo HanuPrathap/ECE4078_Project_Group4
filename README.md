@@ -1,46 +1,21 @@
+# Milestone 3: Navigation and Planning
+- [Introduction](#introduction)
+- [Waypoint navigation (Week 8)](#waypoint-navigation-week-8)
+- Path planning
+	- [with a known map (Week 9)](#path-planning-with-a-known-map-week-9)
+	- [with a partially known map (Week 9)](#path-planning-with-a-partially-known-map-week-9)
+- Evaluation and marking: see [M3 marking instructions](M3_marking.md)
 
+**Please note that all skeleton codes provided are **for references only** and are intended to get you started. They are not guaranteed to be bug-free either. To get better performance please make changes or write your own codes and test cases. As long as your codes perform the task and generate estimation maps that can be marked according to the evaluation schemes and scripts you are free to modify the skeleton codes.**
 
-This is the M1 branch 
+---
 
+## Introduction
+In M3 you will implement the grocery shopping module for the robot. PenguinPi will be given a shopping list and it will need to navigate to the listed fruits&vegs in the supermarket. 
 
-# ECE4078_Lab_2025
-This repo is for ECE4078 (Intelligent Robotics) labs for 2025. There is a quick lab overview video available [here](https://drive.google.com/file/d/1PT0DUQz8tL-ve9bB-mJOfK4l_KZ_MImg/view?usp=sharing). 
+In the arena, there will be ArUco markers and fruits&vegs. The shopping list will contain a subset of the fruits&vegs present in the arena. The remaining fruits&vegs are considered obstacles. **The targets will be of unique types and there will be only one of each target fruit&vegs in the arena.** There may be more than one of a type of fruit/veg as obstacles. 
+For example, in an arena containing 1 lemon, 1 lime, 1 garlic, 1 pumpkin, 1 tomato, 1 capsicum, 2 potatoes, 2 oranges, your robot's given shopping list may be "garlic, lemon, lime, tomato, pumpkin", with the capsicum, potatoes, and oranges as the obstacle. As there are duplicates of oranges and potatoes, the shopping list won't contain potatoes or oranges.
 
-## Labs
+Since M3 focuses on testing your navigation and planning algorithms, we provide you with the groundtruth map of the arena. The repo contains map of a practice arena, slightly different marking arenas will be set up for M3 live demo marking and their true maps will be provided to you at the start of each M3 marking lab. You can either perform M3 with this fully known map, or with a partially known map if you are up for a challenge.
 
-For each milestone, you and your group will have to submit your implementation on Moodle before the marking lab session, and perform a live demonstration during the marking lab session. All lab sessions are located at 16 Alliance, room 224. Labs for ECE4078/5178 runs on:
-- Tuesdays: 9am - 3pm
-- Wednesdays: 9am - 6pm
-- Thursdays: 9am - 6pm
-
-## Lab locations for testing
-
-### Lab room 224, 16 Alliance
-
-Card access requirement for room 224 has been removed, so you can freely enter/exit the space between 8am to 8pm on weekdays. As a general reminder - lab space access will be revoked if there are any issues we find in the room (ie. you shouldn't be eating/drinking in the labs). Please clean up after yourselves, and to not damage the equipment in the lab room. Keyboard, mouse, and monitors needs to be plugged in especially if you are the last group leaving the room. 
-
-The room is available between 8am to 8pm. There are classes in room 224 at the following times:
-- Tuesdays: 9am - 3pm
-- Wednesdays: 9am - 6pm
-- Thursdays: 9am - 6pm
-- Friday: 1pm - 4pm (not ECE4078/5178) 
-
-### Hargrave library
-
-The Hargrave library team has kindly provided us with access to 4 arenas on level 1 of the library (see below). There will be no official booking system through the library (or through us), so please provide usage of the arenas fairly to each other while the library is open, and be respectful of the library staff (ie. pack up early if your team is working towards library's closing time). Please abide to the following rules specified by the library staff, otherwise access to these arenas will be revoked for the entire cohort:
--  You are more than welcome to use the docking stations and monitors where they are located in other parts of the Library (that is, not unplugging them and moving them to the arena). In the arena space, there are also three older ‘mediascape’ tables which they could use if they required a display.
--  If you require more space, you will need to speak to Library staff rather than setting up additional arenas in other parts of the Library. Depending on how busy the space around the arena is, it may be possible to extend the amount of space allocated to the project.
--  In line with our usual expectations about the use of Library space, the students should remain respectful of the needs of other Library users, especially as you will be working in groups. You are welcome to talk in the allocated space, but it will be important for them to be mindful of keeping noise to an appropriate level. For general expectations about conduct within the Library students may refer to our [Terms of Use](https://www.monash.edu/library/about/terms).
--  It is also important to flag that you should not leave your belongings or equipment unattended in the space and that you will need to pack up at the end of your session. This is both to ensure a fair use of the space, and to minimise the risk of items going missing. Although we endeavour to maintain safe spaces, Library staff are unable to take responsibility for items left unattended in the space.
-
-<img src="Images/library.png" alt="Library image" width="500">
-
-### Woodside space
-
-We are currently working with Woodside staff to organise arena space. This will be a work-in-progress throughout the semester and we will update the information here whenever we can. 
-
-## Help desks
-
-Help desks runs after the workshops on Mondays, 12pm-2pm, 16 Alliance, Room 224. 
-
-
+More details to be released closer to week 7.
