@@ -29,10 +29,10 @@ from path_planning_astar import (
 # Defaults (tweakable)
 # ---------------------------
 ARENA_SIZE = 2.4      # m (square, centered at origin)
-RES        = 0.03     # m / cell
+RES        = 0.001     # m / cell
 ROBOT_R    = 0.08    # robot radius (m)
-MARGIN     = 0.03     # extra safety (m)
-STANDOFF_R = 0.3    # m from fruit
+MARGIN     = 0.001     # extra safety (m)
+STANDOFF_R = 0.001    # m from fruit
 HOLD_SECS  = 3.0      # s pause at standoff
 
 
@@ -362,6 +362,10 @@ if __name__ == "__main__":
     if len(distractors_xy) > 0:
         obstacles.append(np.array(distractors_xy, dtype=np.float64))
     obstacle_points_xy = np.vstack(obstacles)
+    
+    target_obstacles = []
+    if len(targets_xy) > 0: # adds targets to obstacles list
+        target_obstacles.append(np.array(targets_xy, dtype=np.float64))
 
     # ---- Build planning grid (once) ----
     # Add the 8 cm cube half-diagonal (~0.0566 m) so we never clip corners
@@ -373,6 +377,7 @@ if __name__ == "__main__":
         res=args.res,
         robot_radius_m=args.robot_r,
         safety_margin_m=(args.margin + CUBE_HALF_DIAG),
+        target_points_m = np.array(target_points_xy, dtype=np.float64),
     )
     print(f"[INFO] Grid: {meta['W']}x{meta['H']} @ {meta['res']:.3f} m/px")
 

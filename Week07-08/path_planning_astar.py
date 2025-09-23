@@ -52,20 +52,32 @@ def build_costmap_fixed(
     res: float = 0.03,
     robot_radius_m: float = 0.10,
     safety_margin_m: float = 0.02,
+    target_points_m: List[Tuple[np.ndarray, float]] = None,
 ):
+    
     xmin, ymin, xmax, ymax = world_bounds_fixed(size_m)
     W = int(math.ceil((xmax - xmin) / res))
     H = int(math.ceil((ymax - ymin) / res))
     occ = np.zeros((H, W), dtype=np.uint8)
 
+    # ==== base obstacles (Aurco, ) ===== #
     inflate_r = robot_radius_m + safety_margin_m
     inflate_cells = max(1, int(round(inflate_r / res)))
+    target_inflate_r = 0.05 # subject to change
+    inflate_cells2 = max(1, int(round(target_inflate_r / res)))
 
     if obstacle_points_m is not None and len(obstacle_points_m) > 0:
         pts_g = [world_to_grid(float(x), float(y), xmin, ymin, res, W, H)
                  for (x, y) in obstacle_points_m]
         _rasterize_points_as_obstacles(occ, pts_g, inflate_cells)
 
+    # === target obstacles == #
+    if target_points_m is not None and len(target_points_m) > 0:
+        pts_g = [world_to_grid(float(x), float(y), xmin, ymin, res, W, H)
+                    for (x, y) in target_points_m]
+        _rasterize_points_as_obstacles(occ, pts_g, inflate_cells2)  # targets have different inflation to the rest of obstacles
+
+    # --- inflate borders ---- #
     b = inflate_cells
     occ[:b, :] = 1; occ[-b:, :] = 1; occ[:, :b] = 1; occ[:, -b:] = 1
 
