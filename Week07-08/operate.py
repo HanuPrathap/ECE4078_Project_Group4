@@ -13,6 +13,7 @@ import util.DatasetHandler as dh   # save/load functions
 import util.measure as measure     # measurements
 import pygame                     # python package for GUI
 import shutil                     # python package for file operations
+import math
 
 # import SLAM components
 sys.path.insert(0, "{}/slam".format(os.getcwd()))

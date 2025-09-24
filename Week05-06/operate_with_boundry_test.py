@@ -117,8 +117,8 @@ class Operate:
         # --- Boundary warning (hard-coded 2.4 m square centered at origin) ---
         # --- Boundary warning (hard-coded 0.6 m square centered at origin) ---
         self.boundary_warn_m = 0.05            # warn inside 5 cm
-        self.robot_radius_m  = 0.10            # 100 mm buffer radius
-        self.bound = (-0.3, -0.3, 0.3, 0.3)    # (xmin, ymin, xmax, ymax) in meters
+        self.robot_radius_m  = 0.12            # 100 mm buffer radius
+        self.bound = (-1.2, -1.2, 1.2, 1.2)    # (xmin, ymin, xmax, ymax) in meters
 
 
 

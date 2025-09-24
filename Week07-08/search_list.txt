@@ -1,5 +1,5 @@
+garlic
+pumpkin
 lemon
 tomato
-garlic
-apple
-orange
+pear
