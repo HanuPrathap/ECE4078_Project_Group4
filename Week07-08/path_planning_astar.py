@@ -63,7 +63,7 @@ def build_costmap_fixed(
     # ==== base obstacles (Aurco, ) ===== #
     inflate_r = robot_radius_m + safety_margin_m
     inflate_cells = max(1, int(round(inflate_r / res)))
-    target_inflate_r = 0.05 # subject to change
+    target_inflate_r = 0.10 # subject to change
     inflate_cells2 = max(1, int(round(target_inflate_r / res)))
 
     if obstacle_points_m is not None and len(obstacle_points_m) > 0:
@@ -168,7 +168,7 @@ def plan_leg_astar(costmap, meta, start_xy: Tuple[float,float], goal_xy: Tuple[f
 # Polyline smoothing (optional)
 # ---------------------------
 
-def smooth_polyline(poly, lam=0.3, iters=30):
+def smooth_polyline(poly, lam=0.5, iters=30):
     if not poly or len(poly) < 4:
         return poly
     P = np.array(poly, dtype=np.float64)
@@ -202,7 +202,7 @@ def visualize_costmap_detailed(cost, occ, meta, obstacle_points_m, target_points
         h_obs = ax1.scatter(obs[:,0], obs[:,1], c='k', s=20, marker='x', label='obstacles', zorder=5)
     ax1.set_aspect('equal'); ax1.set_title('Occupancy'); ax1.set_xlabel('x [m]'); ax1.set_ylabel('y [m]')
     if h_obs is not None:
-        # place legend just outside the left edge
+        # place legend just outside the left edge;[[[]]]
         ax1.legend(handles=[h_obs], loc='center right', bbox_to_anchor=(-0.12, 0.5), frameon=True)
 
     # --- Right: Cost ---

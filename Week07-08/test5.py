@@ -24,19 +24,18 @@ from path_planning_astar import (
     visualize_costmap_detailed, visualize_plan_over_costmap,
     world_to_grid
 )
-
 # ---------------------------
 # Defaults (tweakable)
 # ---------------------------
 ARENA_SIZE = 2.4      # m (square, centered at origin)
-RES        = 0.001     # m / cell
-ROBOT_R    = 0.08    # robot radius (m)
-MARGIN     = 0.001     # extra safety (m)
-STANDOFF_R = 0.001    # m from fruit
+RES        = 0.025     # m / cell
+ROBOT_R    = 0.1   # robot radius (m)
+MARGIN     = 0.12    # extra safety (m)
+STANDOFF_R = 0.175   # m from fruit
 HOLD_SECS  = 3.0      # s pause at standoff
 
 
-# ---------------------------
+# ---------------------------   
 # Map / search helpers
 # ---------------------------
 def read_true_map(fname: str):
@@ -322,7 +321,6 @@ def follow_path_with_localization(ppi, localizer, path_xy, skip=3,
             hold_secs=(hold_secs if last else 0.0)
         )
 
-
 # ---------------------------
 # Main
 # ---------------------------
@@ -350,7 +348,16 @@ if __name__ == "__main__":
     parser.add_argument("--show_map", action="store_true")
     parser.add_argument("--show_each_leg", action="store_true")
     parser.add_argument("--dry_run", action="store_true", help="Plan + visualize only (no robot I/O)")
-    args, _ = parser.parse_known_args()
+    #args, _ = parser.parse_known_args()
+
+    print("DEBUG: About to parse arguments")
+    try:
+        args, unknown = parser.parse_known_args()
+        print(f"DEBUG: Arguments parsed successfully, unknown: {unknown}")
+    except Exception as e:
+        print(f"DEBUG: Error during argument parsing: {e}")
+        raise
+    #args = parser.parse_args()
 
     # ---- Load ground truth & search order ----
     fruit_list, fruit_true_pos, aruco_true_pos = read_true_map(args.map)
@@ -367,6 +374,8 @@ if __name__ == "__main__":
     if len(targets_xy) > 0: # adds targets to obstacles list
         target_obstacles.append(np.array(targets_xy, dtype=np.float64))
 
+    target_points_xy = np.vstack(target_obstacles)
+    
     # ---- Build planning grid (once) ----
     # Add the 8 cm cube half-diagonal (~0.0566 m) so we never clip corners
     CUBE_HALF_DIAG = (2**0.5) * 0.04
@@ -389,85 +398,91 @@ if __name__ == "__main__":
             title="A* costmap"
         )
 
-    # ---- DRY RUN (no robot connection or localization) ----
-    if args.dry_run:
-        current_xy = (0.0, 0.0)  # assume origin for preview, or change as you like
-        for i, fruit_xy in enumerate(targets_xy, start=1):
-            print(f"\n=== Leg {i}/{len(targets_xy)}: start={current_xy} -> fruit={fruit_xy} (standoff {args.standoff:.2f}m) ===")
-            raw_path, standoff_xy, cost = plan_to_standoff(costmap, meta, current_xy, fruit_xy,
-                                                           radius=args.standoff, n_samples=24)
-            if not raw_path:
-                print("  [No reachable standoff] Skipping.")
-                continue
-            path = smooth_polyline(raw_path, lam=args.smooth_lam, iters=args.smooth_iters)
-            sampled = path[::max(1, args.skip)]
-            if sampled[-1] != path[-1]:
-                sampled.append(path[-1])
-            print(f"  waypoints: {len(sampled)}  cost: {cost:.2f}  standoff={standoff_xy}")
+# ---- DRY RUN (no robot connection or localization) ----
+if args.dry_run:
+    current_xy = (0.0, 0.0)  # assume origin for preview, or change as you like
+    for i, fruit_xy in enumerate(targets_xy, start=1):
+        print(f"\n=== Leg {i}/{len(targets_xy)}: start={current_xy} -> fruit={fruit_xy} (standoff {args.standoff:.2f}m) ===")
+        raw_path, standoff_xy, cost = plan_to_standoff(costmap, meta, current_xy, fruit_xy,
+                                                        radius=args.standoff, n_samples=24)
+        if not raw_path:
+            print("  [No reachable standoff] Skipping.")
+            continue
+        path = smooth_polyline(raw_path, lam=args.smooth_lam, iters=args.smooth_iters)
+        sampled = path[::max(1, args.skip)]
+        if sampled[-1] != path[-1]:
+            sampled.append(path[-1])
+        print(f"  waypoints: {len(sampled)}  cost: {cost:.2f}  standoff={standoff_xy}")
 
-            if args.show_each_leg:
-                visualize_plan_over_costmap(costmap, occ, meta, path, current_xy, standoff_xy,
-                                            title=f"Leg {i} to standoff")
+        if args.show_each_leg:
+            visualize_plan_over_costmap(costmap, occ, meta, path, current_xy, standoff_xy,
+                                        title=f"Leg {i} to standoff")
 
-            current_xy = standoff_xy  # assume perfect arrival for preview
-        sys.exit(0)
+        current_xy = standoff_xy  # assume perfect arrival for preview
+    sys.exit(0)
 
-    # ---- LIVE RUN (connect to robot, localize, drive) ----
-    # Connect to robot
-    ppi = PenguinPi(args.ip, args.port)
+# ---- LIVE RUN (connect to robot, localize, drive) ----
+# Connect to robot
+ppi = PenguinPi(args.ip, args.port)
 
-    # Calibration & Robot instance
-    K = np.loadtxt(f"{args.calib_dir}intrinsic.txt", delimiter=',')
-    D = np.loadtxt(f"{args.calib_dir}distCoeffs.txt", delimiter=',')
-    scale_arr = np.loadtxt(f"{args.calib_dir}scale.txt", delimiter=',')
-    baseline = float(np.squeeze(np.loadtxt(f"{args.calib_dir}baseline.txt", delimiter=',')))
-    scale = float(np.mean(scale_arr))
-    # if args.ip == 'localhost':
-    #     scale /= 2.0
-    robot = Robot(baseline, scale, K, D)
+# Calibration & Robot instance
+K = np.loadtxt(f"{args.calib_dir}intrinsic.txt", delimiter=',')
+D = np.loadtxt(f"{args.calib_dir}distCoeffs.txt", delimiter=',')
+scale_arr = np.loadtxt(f"{args.calib_dir}scale.txt", delimiter=',')
+baseline = float(np.squeeze(np.loadtxt(f"{args.calib_dir}baseline.txt", delimiter=',')))
+scale = float(np.mean(scale_arr))
+# if args.ip == 'localhost':
+#     scale /= 2.0
+robot = Robot(baseline, scale, K, D)
 
-    # Known landmarks dict for localization
-    known_landmarks = {}
-    for i in range(len(aruco_true_pos)):
-        tag = i + 1
-        idx = 9 if tag == 10 else i
-        known_landmarks[tag] = [float(aruco_true_pos[idx, 0]), float(aruco_true_pos[idx, 1])]
+# Known landmarks dict for localization
+known_landmarks = {}
+for i in range(len(aruco_true_pos)):
+    tag = i + 1
+    idx = 9 if tag == 10 else i
+    known_landmarks[tag] = [float(aruco_true_pos[idx, 0]), float(aruco_true_pos[idx, 1])]
 
-    # Localization
-    localizer = ArucoLocalization(robot, known_landmarks)
+# Localization
+localizer = ArucoLocalization(robot, known_landmarks)
 
-    # Start pose for planning
-    sx, sy, _ = localizer.get_pose()
-    current_xy = (float(sx), float(sy))
+# Start pose for planning
+sx, sy, _ = localizer.get_pose()
+current_xy = (float(sx), float(sy))
 
+try:
+    for i, (fruit_name, fruit_xy) in enumerate(zip(search_list, targets_xy), start=1):
+        print(f"\n=== Leg {i}/{len(targets_xy)}: start={current_xy} -> fruit={fruit_xy} (standoff {args.standoff:.2f}m) ===")
+        raw_path, standoff_xy, cost = plan_to_standoff(costmap, meta, current_xy, fruit_xy,
+                                                        radius=args.standoff, n_samples=24)
+        if not raw_path:
+            print("  [No reachable standoff] Skipping.")
+            continue
+
+        path = smooth_polyline(raw_path, lam=args.smooth_lam, iters=args.smooth_iters)
+        follow_path_with_localization(
+            ppi, localizer, raw_path, skip=args.skip,   # using the raw path 
+            stop_within=args.standoff, hold_secs=args.hold_secs
+        )
+
+        # Update start for next leg
+        nx, ny, _ = localizer.get_pose()
+        current_xy = (float(nx), float(ny))
+        print(f"  ✅ Found {fruit_name} at {fruit_xy}")
+
+except KeyboardInterrupt:
+    print("\n[INFO] Interrupted by user.")
+finally:
     try:
-        for i, fruit_xy in enumerate(targets_xy, start=1):
-            print(f"\n=== Leg {i}/{len(targets_xy)}: start={current_xy} -> fruit={fruit_xy} (standoff {args.standoff:.2f}m) ===")
-            raw_path, standoff_xy, cost = plan_to_standoff(costmap, meta, current_xy, fruit_xy,
-                                                           radius=args.standoff, n_samples=24)
-            if not raw_path:
-                print("  [No reachable standoff] Skipping.")
-                continue
+        ppi.set_velocity([0, 0])
+    except Exception:
+        pass
+print("\n[INFO] All targets processed. Terminating.")
 
-            path = smooth_polyline(raw_path, lam=args.smooth_lam, iters=args.smooth_iters)
-            follow_path_with_localization(
-                ppi, localizer, raw_path, skip=args.skip,   # using the raw path 
-                stop_within=args.standoff, hold_secs=args.hold_secs
-            )
-
-            # Update start for next leg
-            nx, ny, _ = localizer.get_pose()
-            current_xy = (float(nx), float(ny))
-
-        print("\n[INFO] All targets processed.")
-    except KeyboardInterrupt:
-        print("\n[INFO] Interrupted by user.")
-    finally:
-        try:
-            ppi.set_velocity([0, 0])
-        except Exception:
-            pass
-
+try:
+    ppi.set_velocity([0, 0])
+except Exception:
+    pass
+sys.exit(0)
 # dry 
 # python test5.py --dry_run --show_map --show_each_leg
 
