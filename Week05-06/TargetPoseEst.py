@@ -11,8 +11,7 @@ from YOLO.detector import Detector
 
 TARGET_TYPES = ['orange', 'lemon', 'pear', 'tomato', 'capsicum', 'potato', 'pumpkin', 'garlic']
 
-#TODO function to strip the colour aspect of the label before processing in target pose estimation 
-
+# function to strip the colour aspect of the label before processing in target pose estimation 
 def normalise_label(label):
 
     base_labels = ['orange', 'lemon', 'pear', 'tomato', 'capsicum', 'potato', 'pumpkin', 'garlic']
@@ -92,7 +91,7 @@ def estimate_pose(camera_matrix, obj_info, robot_pose):
 
     # TODO - adding offset for cube centres for 2d pictures of fruit 
  
-    offset_distance = 0.055 # 4 cm in meters
+    offset_distance = 0.045 # 4 cm in meters
 
     # Compute direction from robot to target - chat gpt 
     dx = target_pose['x'] - robot_pose[0][0]
