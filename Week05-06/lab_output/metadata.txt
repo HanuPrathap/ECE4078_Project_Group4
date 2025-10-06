@@ -1,0 +1,9 @@
+score: 54.498
+14 photos
+2-3 photos per fruit (some with multiple in frame)
+Target pose parameters
+- min_detections: 1
+- outlier_std_threshold: 3.0
+- distance_threshold: 0.15
+
+Tried to update GUI to provide live Target Pose Estimation Data to save time during the run.

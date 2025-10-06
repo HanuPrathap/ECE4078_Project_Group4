@@ -5,6 +5,8 @@ import sys
 import time
 import cv2
 import numpy as np
+import json
+from collections import defaultdict
 
 # import utility functions
 sys.path.insert(0, "{}/util".format(os.getcwd()))
@@ -64,6 +66,13 @@ class Operate:
         self.image_id = 0
         self.notification = 'Press ENTER to start SLAM'
         self.pred_notifier = False
+        
+        # Confidence monitoring
+        self.confidence_threshold = 0.8
+        self.max_detections = 5
+        self.target_confidence_data = defaultdict(list)
+        self.confidence_monitoring = False
+        self.confidence_iteration = 0
         # a 5min timer
         self.count_down = 300
         self.start_time = time.time()
@@ -134,8 +143,17 @@ class Operate:
             self.yolo_vis = cv2.cvtColor(self.yolo_vis, cv2.COLOR_RGB2BGR)
             # keep most recent frame and ekf together for saving
             self.file_output = (yolo_input_img, self.ekf)
+            
+            # Start confidence monitoring when detection begins
+            if not self.confidence_monitoring:
+                self.start_confidence_monitoring()
+            
+            # Process detections for confidence tracking
+            self.process_detections_for_confidence()
+            
             # optional one shot
             # self.command['inference'] = False
+
 
     # save images taken by the camera
     def save_image(self):
@@ -227,6 +245,142 @@ class Operate:
             print("----------------------------------------------\n")
         else:
             print("No landmarks were observed during SLAM.")
+    
+    # Confidence monitoring methods
+    def start_confidence_monitoring(self):
+        """Start confidence monitoring"""
+        self.confidence_monitoring = True
+        self.confidence_iteration = 0
+        print("\n🎯 CONFIDENCE MONITORING STARTED")
+        print("=" * 50)
+        print(f"Confidence Threshold: {self.confidence_threshold}")
+        print(f"Max Detections: {self.max_detections}")
+        print("=" * 50)
+        print()
+    
+    def process_detections_for_confidence(self):
+        """Process current detections for confidence tracking"""
+        if not self.confidence_monitoring:
+            return
+            
+        self.confidence_iteration += 1
+        
+        # Get robot pose
+        robot_pose = self.ekf.robot.state[:3]  # [x, y, theta]
+        
+        # Process each detection in detector_output
+        if hasattr(self.detector_output, 'boxes') and len(self.detector_output.boxes) > 0:
+            for i, box in enumerate(self.detector_output.boxes):
+                # Extract detection info
+                confidence = float(box.conf[0])
+                class_id = int(box.cls[0])
+                bbox = box.xyxy[0].cpu().numpy()
+                
+                # Get class name (assuming detector has class names)
+                if hasattr(self.detector, 'class_names'):
+                    class_name = self.detector.class_names[class_id]
+                else:
+                    class_name = f"class_{class_id}"
+                
+                # Create target name
+                target_name = f"{class_name}_{i}"
+                
+                # Store confidence data
+                self.target_confidence_data[target_name].append({
+                    'timestamp': time.time(),
+                    'confidence': confidence,
+                    'robot_pose': robot_pose.copy(),
+                    'bbox': bbox.tolist(),
+                    'iteration': self.confidence_iteration
+                })
+                
+                # Keep only last 50 entries per target
+                if len(self.target_confidence_data[target_name]) > 50:
+                    self.target_confidence_data[target_name] = self.target_confidence_data[target_name][-50:]
+        
+        # Print confidence status every 10 iterations
+        if self.confidence_iteration % 10 == 0:
+            self.print_confidence_status()
+    
+    def print_confidence_status(self):
+        """Print current confidence status"""
+        if not self.target_confidence_data:
+            print("⏳ Waiting for target detections...")
+            return
+        
+        print(f"\n🔄 Iteration {self.confidence_iteration} - {time.strftime('%H:%M:%S')}")
+        print("📊 CONFIDENCE STATUS")
+        print("-" * 40)
+        
+        all_targets_ready = True
+        
+        for target_name, history in self.target_confidence_data.items():
+            if not history:
+                continue
+                
+            latest = history[-1]
+            confidence = latest['confidence']
+            n_detections = len(history)
+            
+            # Check if this target meets criteria
+            target_ready = (confidence >= self.confidence_threshold and 
+                           n_detections >= self.max_detections)
+            
+            if not target_ready:
+                all_targets_ready = False
+            
+            # Status indicators
+            if confidence >= 0.8:
+                status = "🟢 HIGH"
+            elif confidence >= 0.6:
+                status = "🟡 MEDIUM"
+            else:
+                status = "🔴 LOW"
+            
+            ready_indicator = "✅ READY" if target_ready else "⏳ PENDING"
+            
+            print(f"{target_name}:")
+            print(f"  Confidence: {confidence:.3f} {status}")
+            print(f"  Detections: {n_detections}/{self.max_detections}")
+            print(f"  Status: {ready_indicator}")
+            print()
+        
+        if all_targets_ready and len(self.target_confidence_data) > 0:
+            print("🎉 SUCCESS! All targets meet criteria!")
+            self.print_final_summary()
+            # Optionally stop monitoring
+            # self.confidence_monitoring = False
+    
+    def print_final_summary(self):
+        """Print final confidence summary"""
+        print("\n" + "=" * 50)
+        print("🎯 FINAL CONFIDENCE SUMMARY")
+        print("=" * 50)
+        
+        total_targets = len(self.target_confidence_data)
+        ready_targets = 0
+        
+        for target_name, history in self.target_confidence_data.items():
+            if not history:
+                continue
+                
+            latest = history[-1]
+            confidence = latest['confidence']
+            n_detections = len(history)
+            
+            if (confidence >= self.confidence_threshold and 
+                n_detections >= self.max_detections):
+                ready_targets += 1
+                
+            print(f"{target_name}: {confidence:.3f} ({n_detections} detections)")
+        
+        print(f"\nReady targets: {ready_targets}/{total_targets}")
+        
+        if ready_targets == total_targets and total_targets > 0:
+            print("🎉 ALL TARGETS READY!")
+        else:
+            print("⏳ Still waiting for targets...")
+    
 
     @staticmethod
     def draw_pygame_window(canvas, cv2_img, position):

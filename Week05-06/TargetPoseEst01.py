@@ -6,18 +6,38 @@ import ast
 import cv2
 from YOLO.detector import Detector
 from scipy import stats
+import time
 
 
 # list of target fruits and vegs types 
 TARGET_TYPES = ['orange', 'lemon', 'pear', 'tomato', 'capsicum', 'potato', 'pumpkin', 'garlic']
 
+# Removed GUI class - now using terminal output for live updates
+
 
 def normalise_label(label):
-    """Strip color prefix from labels"""
+    """Strip color prefix from labels and map color variants to base classes"""
+    # Map color variants to base classes
+    color_mappings = {
+        'capsicum_green': 'capsicum',
+        'capsicum_yellow': 'capsicum', 
+        'capsicum_red': 'capsicum',
+        'pear_yellow': 'pear',
+        'pear_green': 'pear',
+        'pumpkin_orange': 'pumpkin',
+        'pumpkin_green': 'pumpkin'
+    }
+    
+    # Check for exact color variant matches first
+    if label in color_mappings:
+        return color_mappings[label]
+    
+    # Check for base class matches
     base_labels = ['orange', 'lemon', 'pear', 'tomato', 'capsicum', 'potato', 'pumpkin', 'garlic']
     for base in base_labels:
         if label.startswith(base):
             return base
+    
     return label
 
 
@@ -55,14 +75,17 @@ def estimate_pose(camera_matrix, obj_info, robot_pose, image_shape=(240, 320)):
     """
     focal_length = camera_matrix[0][0]
     
-    target_dimensions_dict = {'orange': [0.0756, 0.0767, 0.0729], 'lemon': [0.054,0.074, 0.0536], 
-                              'pear': [0.0704, 0.07565, 0.10425], 'tomato': [0.0678, 0.07, 0.0617], 
-                              'capsicum': [0.07487, 0.07447, 0.0931], 'potato': [0.0677, 0.094, 0.0566], 
-                              'pumpkin_orange': [0.08475, 0.08225, 0.07815], 'garlic': [0.0578, 0.0645, 0.0747],
-                              'apple': [0.0678, 0.07, 0.0617], 'capsicum_green': [0.07487, 0.07447, 0.0931],
-                              'capsicum_yellow': [0.07487, 0.07447, 0.0931], 'pear_yellow' : [0.0704, 0.07565, 0.10425],
-                              'pear_green' : [0.0704, 0.07565, 0.10425], 'capsicum_red': [0.07487, 0.07447, 0.0931],
-                              'pumpkin_green': [0.08475, 0.08225, 0.09515]}
+    target_dimensions_dict = {
+        'orange': [0.0756, 0.0767, 0.0729], 
+        'lemon': [0.054, 0.074, 0.0536], 
+        'pear': [0.0704, 0.07565, 0.10425],  # Average of pear_yellow and pear_green
+        'tomato': [0.0678, 0.07, 0.0617], 
+        'capsicum': [0.07487, 0.07447, 0.0931],  # Average of capsicum_green, capsicum_yellow, capsicum_red
+        'potato': [0.0677, 0.094, 0.0566], 
+        'pumpkin': [0.08475, 0.08225, 0.08665],  # Average of pumpkin_orange and pumpkin_green
+        'garlic': [0.0578, 0.0645, 0.0747],
+
+    }
     
     target_class = obj_info[0]
     target_box = obj_info[1]  # [x, y, width, height]
@@ -261,9 +284,15 @@ def merge_estimations_robust(target_pose_dict, distance_threshold=0.12, min_dete
     return target_est
 
 
+# Removed GUI processing function - now using direct terminal output
+
 # main loop
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    print("=" * 60)
+    print("LIVE TARGET POSE ESTIMATION MONITOR")
+    print("=" * 60)
     
     # read in camera matrix
     fileK = f'{script_dir}/calibration/param/intrinsic.txt'
@@ -280,16 +309,22 @@ if __name__ == "__main__":
             pose_dict = ast.literal_eval(line)
             image_poses[pose_dict['imgfname']] = pose_dict['pose']
     
+    print(f"Loaded {len(image_poses)} images. Starting detection...")
+    print("-" * 60)
+    
     # estimate pose of targets in each image
     target_pose_dict = {}
     detected_type_list = []
+    images_processed = 0
     
-    print("Processing images...")
     for image_path in image_poses.keys():
+        print(f"\n🔄 Processing: {os.path.basename(image_path)}")
+        
         input_image = cv2.imread(image_path)
         bounding_boxes, bbox_img = yolo.detect_single_image(input_image)
         robot_pose = image_poses[image_path]
         
+        image_detections = 0
         for detection in bounding_boxes:
             normalised_label = normalise_label(detection[0])
             occurrence = detected_type_list.count(normalised_label)
@@ -304,26 +339,55 @@ if __name__ == "__main__":
             }
             
             detected_type_list.append(normalised_label)
+            image_detections += 1
+            
+            print(f"  ✅ Detected {normalised_label}_{occurrence}: ({pose['x']:.3f}, {pose['y']:.3f}) [conf: {confidence:.3f}]")
+        
+        images_processed += 1
+        
+        # Print live results after each image
+        if target_pose_dict:
+            print(f"\n📊 LIVE RESULTS ({images_processed} images processed, {len(target_pose_dict)} total detections):")
+            print("-" * 40)
+            
+            # Create live results for display
+            live_results = {}
+            for key, data in target_pose_dict.items():
+                live_results[key] = {
+                    "x": data["x"],
+                    "y": data["y"],
+                    "confidence": data["confidence"],
+                    "uncertainty": 0.0,  # Will be calculated during merging
+                    "n_detections": 1    # Single detection for now
+                }
+            
+            # Print formatted JSON
+            formatted_json = json.dumps(live_results, indent=4, sort_keys=True)
+            print(formatted_json)
+            print("-" * 40)
     
-    print(f"Total detections: {len(target_pose_dict)}")
+    print(f"\n🔄 Merging estimations with outlier rejection...")
     
     # Merge with robust estimation
-    print("\nMerging estimations with outlier rejection...")
     target_est = merge_estimations_robust(
         target_pose_dict,
-        distance_threshold=0.12,  # 12cm clustering threshold
-        min_detections=2,  # Require at least 2 detections
-        outlier_std_threshold=2.5  # Remove points > 2.5 MAD away
+        distance_threshold=0.15,  # 15cm clustering threshold (more lenient)
+        min_detections=1,  # Allow single detections
+        outlier_std_threshold=3.0  # Less aggressive outlier removal
     )
     
-    # Print summary
-    print("\n=== Final Target Estimates ===")
+    # Print final results
+    print("\n" + "=" * 60)
+    print("🎯 FINAL TARGET ESTIMATES")
+    print("=" * 60)
+    
     for target_name, data in target_est.items():
         print(f"{target_name}:")
         print(f"  Position: ({data['x']:.4f}, {data['y']:.4f})")
         print(f"  Uncertainty: {data['uncertainty']:.4f} m")
         print(f"  Confidence: {data['confidence']:.3f}")
         print(f"  Detections: {data['n_detections']}")
+        print()
     
     # Save with metadata
     with open(f'{script_dir}/lab_output/targets.txt', 'w') as fo:
@@ -334,6 +398,7 @@ if __name__ == "__main__":
     with open(f'{script_dir}/lab_output/targets_simple.txt', 'w') as fo:
         json.dump(target_est_simple, fo, indent=4)
     
-    print('\n✓ Estimations saved!')
-    print(f"  Full data: lab_output/targets.txt")
-    print(f"  Simple format: lab_output/targets_simple.txt")
+    print('✅ Estimations saved!')
+    print(f"  📁 Full data: lab_output/targets.txt")
+    print(f"  📁 Simple format: lab_output/targets_simple.txt")
+    print("\n" + "=" * 60)
